@@ -1,17 +1,49 @@
 # PoKemon ML Predictor
 
-This project aims to predict the `BST`, known as `total_stats` (sum of base stats: HP + atk + def + sp.atk + sp.def + spe) for existing and future Pokémon generations using ML.
+- This project aims to predict the `BST`, known as `total_stats` (sum of base stats: HP + atk + def + sp.atk + sp.def + spe) for existing and future Pokémon generations using ML.
 
-## Model Leaderboard
+- The project will train different models and will dive down in feature engineering inspired by zoomorphology, the biology discipline that studies animal shapes. This will provide a further boost to the model predictions. 
 
-Best models ranked by R² on test set (Base Stats Total prediction).
+- Game Freak, the Pokemon videogame developers, are probably biased by nature when creating pokemons. In that sense, these creatures should follow this underlying bias and their properties, like `BST` are secretly related to this nature imprint.
 
-| Rank | Model   | R²    | Browt | Pombonon | Gecqua |
-|------|---------|-------|-------------|----------------|--------------|
-| 1    | LGBM    | 0.856 | 255 ± 103    | 304 ± 70       | 283 ± 92     |
-| 2    | Ordinal | 0.861 | 269 ± 2    | 295 ± 2       | 291 ± 1     |
-| 3    | Native  | 0.860 | 276 ± 1    | 303 ± 2        | 296 ± 5     |
 
-*Updated: Mar 11, 2026*  
-*Target: R² ≥ 0.9, Uncertainty ~ 10*
 
+## Predicted values for New Generation Pokemon
+
+<!-- Leaderboard Section -->
+<table align="center" style="table-layout: fixed; width: 100%; max-width: 1000px;">
+<tr>
+  <td align="center">
+    <img src="./plots/stats_ld.png" 
+         style="border: 3px solid #0c2eb6; border-radius: 5px; height: 200px; max-width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <br><strong>BST Predictions for different models</strong>
+  </td>
+</tr>
+</table>
+
+<table align="center">
+  <tr>
+    <td align="center"><img src="figures/sprites/browt.png" width="320" height="320" style="border: 3px solid #78C850;  border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+    <td align="center"><img src="figures/sprites/pombon.png" width="320" height="320" style="border: 3px solid #F08030; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+    <td align="center"><img src="figures/sprites/gecqua.png" width="320" height="320" style="border: 3px solid #2da1ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Best BST so far<br>273</strong></td>
+    <td align="center"><strong>Best BST so far<br>304</strong></td>
+    <td align="center"><strong>Best BST so far<br>292</strong></td>
+  </tr>
+</table>
+
+## The metrics leaderboard for 3 different models. Currently, no training at all.
+<!-- Leaderboard Section -->
+<table align="center" style="table-layout: fixed; width: 100%; max-width: 1000px;">
+<tr>
+  <td align="center">
+    <img src="./plots/metrics_ld.png" 
+         style="border: 3px solid #0c2eb6; border-radius: 5px; height: 200px; max-width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <br><strong>R2 Leaderboard for different models</strong>
+  </td>
+</tr>
+</table>
+
+>

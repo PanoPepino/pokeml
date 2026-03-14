@@ -29,12 +29,15 @@
 - [X] Fix a simple XGBoost model with encoding to get BST values
 - [X] Design pipeline to implement all 4 models at same time
 - [X] Move those preprocessor functions to src after checking everything works.
+- [X] Add nice pictures for 3 initials and expected BST.
 
 
 - [ ] Create function to explore GridSearch, extract best parameters and feed in get_leaderboard
-- [ ] Explore correlation matrix.
-- [ ] Simplify README.md -> Just to summary and refer to .PDF for more information.
-- [ ] Add nice pictures for 3 initials and expected BST.
+- [ ] Fix extract importance in leaderboard for each feat. (understand it)
+- [ ] Explore correlation matrix. (Evaluate if it is the same thing as importance)
+- [ ] Enhance Readme + link Documentation to it.
+- [ ] Add documentation.pdf to download.
+
 - [ ] Create gitignore for all sprites and unneccesary .tex files.
 - [ ] Think better on renormalisation of s3c3 and single to s2c2. Increase sample, but bias? (see notes)
 - [ ] Find relation between pokemon shape and stats?? 

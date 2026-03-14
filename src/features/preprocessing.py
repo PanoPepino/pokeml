@@ -6,69 +6,96 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
-
-# Defining preprocessing for xgboost
 
 
-def prep_xgboost_ohe(X_train,
-                     X_test,
-                     new_gen,  # Recall, we need to convert initials also:
-                     cat_feats=None,  # Do not forget to rewrite if new features added
-                     num_feats=None):  # same
+def prepare_data(df, new_poke_info):
     """
-    Preprocessor for xgboost. Will onehot encode categorical features defined as input.
+    This function will do 4 main things:
+
+        - 1) Drop values from X, y, encode and impute with :func:`cat_fill_split`
+        - 2) Split the train and test values with :func:`train_test_split`
+        - 3) Preprocess all your data in 3 different ways with :func:`prep_name_model_mode`
+        - 4) Spit out all processed data as dict.
 
     Args:
-        X_train (DataFrame): 
-        X_test (DataFrame): 
-        new_gen (DataFrame): 
-        cat_feats, optional: To be enhance by input when feature eng.
-        num_feats, optional: To be enhance by input when feature eng.
-
+        df (DataFrame): the pokedex to use
+        new_poke_info (DataFrame): An extension of the new poke information.
 
     Returns:
-        X_train, X_test, new_gen, cats. All preprocessed.
+        data (Dict): All data processed according to preprocessors.
     """
 
-    if cat_feats is None:
-        cat_feats = ['type_1', 'type_2', 'rarity', 'stage', 'color']
-    if num_feats is None:
-        num_feats = ['generation', 'height', 'weight']
-    # Ideally, I guess these list should be inputs when feat eng.
+    # 1: Drop BST values, encode and impute and split df for training
+    X, y = df.drop(columns="total_stats"), df["total_stats"]
+    X_train, X_test, y_train, y_test, new_gen_values = cat_fill_split(df, new_poke_info)
+    X_tr, X_te, y_tr, y_te = train_test_split(X_train.copy(), y_train.copy(), test_size=0.25, random_state=1)
 
-    # One hot encoding definition
-    encoder = OneHotEncoder(sparse_output=False,
-                            handle_unknown='ignore')
+    # 2: Drop the name of the new_pokemon_info. Store names in list for display use
+    gen_names = new_poke_info["name"].tolist()
+    gen_feats = new_poke_info.drop(columns="name")
 
-    dfs = [X_train, X_test, new_gen]
-    dfs_out = []
+    # 3: Here the dictionariony with all preprocessors. In case you add one more, do not forget to add here.
+    prep = {
+        "ordinal": prep_catboost_ordinal,
+        "native":  prep_catboost_native,
+        "light_gbm": prep_lightgbm,
+    }
 
-    for i, df in enumerate(dfs):
+    # 4: Data will be output in a dic.
+    data = {}
+    for name, func in prep.items():  # dict.items will open and unzip keys and values!
+        # func act as the value of the dict and map it.
+        X_tr_p, X_te_p, gen_p, cats = func(X_tr.copy(), X_te.copy(), gen_feats.copy(), [])
+        data[name] = (X_tr_p, X_te_p, gen_p, cats, y_tr, y_te, gen_names)  # Spit out the values.
 
-        if i == 0:
-            df_enc = encoder.fit_transform(df[cat_feats])
-        else:
-            df_enc = encoder.transform(df[cat_feats])
+    return data
 
-        df_num = df[num_feats]
-        cats_out = encoder.get_feature_names_out()
-        df_out = pd.concat([pd.DataFrame(df_enc, columns=cats_out, index=df.index), df_num], axis=1)
-        dfs_out.append(df_out)
 
-    return tuple(dfs_out) + ([],)
+# First, we define a function to accommodate all data (to provide category flag + fill-in missing entries) to objects and also split X, y into train and test
 
-# Testing
-# X_tr, X_te, gen_ohe, _ = prep_xgboost_ohe(X_train, X_test, new_gen_initials)
-# shape_checker(X_tr, X_te, gen_ohe)
+def cat_fill_split(df, new_df):
+    """
+    (OBS there should exist a function before this one to add those NEW FEATURES when engineering)
 
+    This function will do three main things:
+
+    1) Fill in missing values for Type 2.
+    2) Check all objects in dataframes and assign category tag.
+    3) Split between training and test values
+
+    Args:
+        df (DataFrame): the dataframe to train and test
+        new_df (DataFrame): the new dataframe for new pokemon.
+
+    Returns:
+        X_train, X_test, y_train, y_test and all previous dataframe's objects conversed to categorical features.
+    """
+
+    # As the new_pokes dataframe will contain names, we need to drop, as this will not be required for the whole training.
+    new_df = new_df.drop('name', axis=1)
+
+    # We need to imput missing types for type_2 and transform some of them to categories in tdf. We also gonna transform objects into categories in tdf.
+    to_cat = [df, new_df]
+    for dataframe in to_cat:
+        dataframe['type_2'] = dataframe['type_2'].fillna('None')
+        dataframe[dataframe.select_dtypes('object').columns] = dataframe.select_dtypes('object').astype('category')
+
+    X = df.drop('total_stats', axis=1)
+    y = df['total_stats']
+
+    # Defining the train/test splitting
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=1)
+
+    return X_train, X_test, y_train, y_test, new_df
 
 # We now define a preprocessor for catboost with ordinality transformation
+
 
 def prep_catboost_ordinal(X_train,
                           X_test,
                           new_gen,
-                          reg_cat_feats=None,  # In case new categorical features appear
+                          new_cat_feats=None,  # In case new categorical features appear
                           new_maps=None):  # To enhance if future feat. eng.
     """
     Preproccessor for catboostregressor. In this case, we create a map for two categories, to transform into simple numbers. 
@@ -77,7 +104,7 @@ def prep_catboost_ordinal(X_train,
         X_train (DataFrame): 
         X_test (DataFrame): 
         new_gen (DataFrame): 
-        reg_cat_feats (list, optional): In case new categories appear in feat. eng.
+        new_cat_feats (list, optional): In case new categories appear in feat. eng.
         new_maps (dict, optional): In case previous new cats require a mapping, this is the place
 
     Returns:
@@ -104,8 +131,8 @@ def prep_catboost_ordinal(X_train,
     if new_maps is not None:  # Must be a dict of dicts
         maps.update(new_maps)
 
-    if reg_cat_feats is not None:
-        cat_feats.extend(reg_cat_feats)
+    if new_cat_feats is not None:
+        cat_feats.extend(new_cat_feats)
 
     for col, mapping in maps.items():
         for df in dfs:
@@ -147,7 +174,7 @@ def prep_catboost_native(X_train,
         cat_feats.extend(new_cat_feats) if isinstance(new_cat_feats, list) else [new_cat_feats]
 
     # Transforming those columns to category
-    dfs = [X_train, X_test, new_gen]
+    dfs = [X_train.copy(), X_test.copy(), new_gen.copy()]
     for df in dfs:
         for col in cat_feats:
             df[col] = df[col].astype('category')
