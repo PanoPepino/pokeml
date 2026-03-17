@@ -14,7 +14,7 @@
 <table align="center" style="table-layout: fixed; width: 100%; max-width: 1000px;">
 <tr>
   <td align="center">
-    <img src="./plots/stats_ld.png" 
+    <img src="./figures/stats_ld.png" 
          style="border: 3px solid #0c2eb6; border-radius: 5px; height: 200px; max-width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <br><strong>BST Predictions for different models</strong>
   </td>
@@ -23,9 +23,9 @@
 
 <table align="center">
   <tr>
-    <td align="center"><img src="figures/sprites/browt.png" width="320" height="320" style="border: 3px solid #78C850;  border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
-    <td align="center"><img src="figures/sprites/pombon.png" width="320" height="320" style="border: 3px solid #F08030; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
-    <td align="center"><img src="figures/sprites/gecqua.png" width="320" height="320" style="border: 3px solid #2da1ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+    <td align="center"><img src="figures/browt.png" width="320" height="320" style="border: 3px solid #78C850;  border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+    <td align="center"><img src="figures/pombon.png" width="320" height="320" style="border: 3px solid #F08030; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
+    <td align="center"><img src="figures/gecqua.png" width="320" height="320" style="border: 3px solid #2da1ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></td>
   </tr>
   <tr>
     <td align="center"><strong>Best BST so far<br>272±2</strong></td>
@@ -39,7 +39,7 @@
 <table align="center" style="table-layout: fixed; width: 100%; max-width: 1000px;">
 <tr>
   <td align="center">
-    <img src="./plots/metrics_ld.png" 
+    <img src="./figures/metrics_ld.png" 
          style="border: 3px solid #890613; border-radius: 5px; height: 200px; max-width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
     <br><strong>R2 Leaderboard for different models</strong>
   </td>

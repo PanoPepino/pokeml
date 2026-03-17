@@ -40,7 +40,7 @@ dist/
 
 # Avoid some folders
 documentation/
-figures/
+sprites_plates/
 
 # Avoid specific files
 old_readme.md
