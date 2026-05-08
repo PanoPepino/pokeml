@@ -47,6 +47,37 @@ REGULAR_POKES = ['nidoran_f',
                  ]
 
 
+INITIAL_POKES = [
+    "bulbasaur", "ivysaur", "venusaur",
+    "charmander", "charmeleon", "charizard",
+    "squirtle", "wartortle", "blastoise",
+    "chikorita", "bayleef", "meganium",
+    "cyndaquil", "quilava", "typhlosion",
+    "totodile", "croconaw", "feraligatr",
+    "treecko", "grovyle", "sceptile",
+    "torchic", "combusken", "blaziken",
+    "mudkip", "marshtomp", "swampert",
+    "turtwig", "grotle", "torterra",
+    "chimchar", "monferno", "infernape",
+    "piplup", "prinplup", "empoleon",
+    "snivy", "servine", "serperior",
+    "tepig", "pignite", "emboar",
+    "oshawott", "dewott", "samurott",
+    "chespin", "quilladin", "chesnaught",
+    "fennekin", "braixen", "delphox",
+    "froakie", "frogadier", "greninja",
+    "rowlet", "dartrix", "decidueye",
+    "litten", "torracat", "incineroar",
+    "popplio", "brionne", "primarina",
+    "grookey", "thwackey", "rillaboom",
+    "scorbunny", "raboot", "cinderace",
+    "sobble", "drizzile", "inteleon",
+    "sprigatito", "floragato", "meowscarada",
+    "fuecoco", "crocalor", "skeledirge",
+    "quaxly", "quaxwell", "quaquaval",
+]
+
+
 REGIONS = [
     "alola", "galar", "hisui", "paldea"
 ]
@@ -89,14 +120,14 @@ BEAST_GEN_9 = ['wo_chien',
                'chi_yu']
 
 
-MINIMAL_FEATURES = ['generation',
-                    'name',
-                    'type_1',
-                    'type_2',
-                    'rarity',
-                    'stage',
-                    'shape',
-                    'color',
-                    'total_stats',
-                    'height',
-                    'weight']
+MINIMAL_FEATURES = [
+    'name',
+    'type_1',
+    'type_2',
+    'rarity',
+    'stage',
+    'shape',
+    'color',
+    'total_stats',
+    'height',
+    'weight']

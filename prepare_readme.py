@@ -5,7 +5,7 @@ import json
 import numpy as np
 
 
-BEST_ITERATION = '2026_04_22_w_stop'
+BEST_ITERATION = '2026_05_08_feat'
 
 
 def df_to_markdown(
@@ -127,7 +127,7 @@ def replace_input(file_path: str, old_text: str, new_text: str):
 # PREDICTIONS
 
 
-predictions = pd.read_csv(f'artifacts/predictions/{BEST_ITERATION}_preds.csv')
+predictions = pd.read_csv(f'artifacts/predictions/{BEST_ITERATION}.csv')
 predictions_md = df_to_markdown(predictions, show_index=False)
 
 replace_between_markers(

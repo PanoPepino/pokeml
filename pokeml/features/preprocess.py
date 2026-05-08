@@ -3,6 +3,7 @@
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from typer.cli import app
 
 from pokeml.data.load import load_data
 
@@ -11,31 +12,15 @@ from pokeml.data.load import load_data
 
 
 def cat_fill(my_df):
-    """
-    (OBS there should exist a function before this one to add those NEW FEATURES when engineering)
+    if isinstance(my_df, pd.DataFrame):
+        new_df = my_df.copy()
+    else:
+        new_df = load_data(my_df).copy()
 
-    This function will do three main things:
-
-    1) Fill in missing values for Type 2.
-    2) Check all objects in my_dfs and assign category tag.
-
-    Args:
-        df (DataFrame): the dataframe to process.
-
-    Returns:
-        df's objects conversed to categorical features and missing values.
-    """
-
-    # As the new_pokes my_df will contain names, we need to drop, as this will not be required for the whole training.
-    my_df = load_data(my_df)
-
-    new_df = my_df.copy()
-    new_df = new_df.drop('name', axis=1, errors='ignore')
-
-    # We need to imput missing types for type_2 and transform some of them to categories in tdf. We also gonna transform objects into categories in tdf.
-
-    new_df['type_2'] = new_df['type_2'].fillna('None')
-    new_df[new_df.select_dtypes('object').columns] = new_df.select_dtypes('object').astype('category')
+    new_df["type_2"] = new_df["type_2"].fillna("None")
+    new_df[new_df.select_dtypes("object").columns] = (
+        new_df.select_dtypes("object").astype("category")
+    )
 
     return new_df
 
@@ -48,10 +33,12 @@ def prep_catboost_ordinal(dataframe,
     """
     Preproccessor for catboostregressor. In this case, we create a map for two categories, to transform into simple numbers. 
 
+
     Args:
         dataframe (DataFrame): The Dataframe to be massaged. 
         new_cat_feats (list, optional): In case new categories appear in feat. eng.
         new_maps (dict, optional): In case previous new cats require a mapping, this is the place
+
 
     Returns:
         new_dataframe, cats. All preprocessed.
@@ -71,16 +58,20 @@ def prep_catboost_ordinal(dataframe,
     cat_feats = ['type_1', 'type_2', 'shape', 'color']
 
     # In case of new maps
-    if new_maps is not None:  # Must be a dict of dicts
+    if new_maps is not None:
         maps.update(new_maps)
 
     if new_cat_feats is not None:
-        cat_feats.extend(new_cat_feats)
+        if isinstance(new_cat_feats, list):
+            cat_feats.extend(new_cat_feats)
+        else:
+            cat_feats.append(new_cat_feats)
 
     new_dataframe = dataframe.copy()
 
     for col, mapping in maps.items():
-        new_dataframe[col] = new_dataframe[col].map(mapping).astype('float')
+        if col in new_dataframe.columns:
+            new_dataframe[col] = new_dataframe[col].map(mapping).astype('float')
 
     return new_dataframe, cat_feats
 
@@ -92,9 +83,11 @@ def prep_catboost_native(dataframe,
     """
     Another preprocessor function for catboost, but in this case native.
 
+
     Args:
         dataframe (DataFrame): The Dataframe to be massaged.
         new_cat_feats (list, optional): If new categories appear after feat. eng. Defaults to None.
+
 
     Returns:
         new_dataframe, cats. All preprocessed.
@@ -103,13 +96,17 @@ def prep_catboost_native(dataframe,
     cat_feats = ['type_1', 'type_2', 'rarity', 'stage', 'shape', 'color']
 
     if new_cat_feats is not None:
-        cat_feats.extend(new_cat_feats) if isinstance(new_cat_feats, list) else [new_cat_feats]
+        if isinstance(new_cat_feats, list):
+            cat_feats.extend(new_cat_feats)
+        else:
+            cat_feats.append(new_cat_feats)
 
     # Transforming those columns to category
     new_dataframe = dataframe.copy()
 
     for col in cat_feats:
-        new_dataframe[col] = new_dataframe[col].astype('category')
+        if col in new_dataframe.columns:
+            new_dataframe[col] = new_dataframe[col].astype('category')
 
     return new_dataframe, cat_feats
 
@@ -121,9 +118,11 @@ def prep_lightgbm(dataframe,
     """
     Another preprocessor function for LGBM.
 
+
     Args:
         dataframe (DataFrame): The Dataframe to be massaged.
         new_cat_feats (list, optional): If new categories appear after feat. eng. Defaults to None.
+
 
     Returns:
         new_dataframe, cats. All preprocessed.
@@ -132,95 +131,158 @@ def prep_lightgbm(dataframe,
     cat_feats = ['type_1', 'type_2', 'rarity', 'stage', 'shape', 'color']
 
     if new_cat_feats is not None:
-        cat_feats.extend(new_cat_feats) if isinstance(new_cat_feats, list) else [new_cat_feats]
+        if isinstance(new_cat_feats, list):
+            cat_feats.extend(new_cat_feats)
+        else:
+            cat_feats.append(new_cat_feats)
 
     # Transforming those columns to category
     new_dataframe = dataframe.copy()
     for col in cat_feats:
-        new_dataframe[col] = new_dataframe[col].astype('category')
+        if col in new_dataframe.columns:
+            new_dataframe[col] = new_dataframe[col].astype('category')
 
     return new_dataframe, cat_feats
 
 
-def prepare_data_train(df, tsize=0.3):
+def prepare_data_train(df,
+                       tsize=0.3,
+                       feat_eng_steps=None):
     """
     This function will do 4 main things:
+
 
         - 1) Encode and impute with :func:`cat_fill_split`
         - 2) Preprocess all your data in 3 different ways with :func:`prep_name_model_mode`
         - 3) Split the train and test values with :func:`train_test_split`
         - 4) Spit out all processed data as dict.
 
+
     Args:
         df (my_df): the pokedex to use
         tsize (float): In case you want another ratio for the training set.
+
 
     Returns:
         data (Dict): All data processed according to preprocessors.
     """
 
-    # 1: Drop BST values, encode and impute and split df for training
+    raw_df = load_data(df)
 
-    df_to_split = cat_fill(df)
+    fe_state = {}
+    feat_eng_steps = feat_eng_steps or []
 
-    # 3: Here the dictionariony with all preprocessors. In case you add one more, do not forget to add here.
+    all_new_cat_feats = []
+    all_new_maps = {}
+
+    for step_name, compute_func, apply_func in feat_eng_steps:
+        step_state = compute_func(raw_df)
+        fe_state[step_name] = step_state
+        raw_df = apply_func(raw_df, step_state)
+
+        step_cat_feats = step_state.get("new_cat_feats", [])
+        if step_cat_feats:
+            all_new_cat_feats.extend(step_cat_feats)
+
+        step_maps = step_state.get("new_maps", {})
+        print(step_maps)
+        if step_maps:
+            all_new_maps.update(step_maps)
+
+    df_to_split = cat_fill(raw_df)
+    Xy_tr, Xy_te = train_test_split(df_to_split, test_size=tsize, random_state=1)
+
     prep = {
         "cat_ordinal": prep_catboost_ordinal,
         "cat_native":  prep_catboost_native,
         "light_gbm": prep_lightgbm,
     }
 
-    # 4: Data will be output in a dic.
     data = {}
-    for name, func in prep.items():  # dict.items will open and unzip keys and values!
-        # func act as the value of the dict and map it.
-        prep_data = func(df_to_split)
-        cats = prep_data[-1]
-        X, y = prep_data[0].drop(columns="total_stats"), prep_data[0]["total_stats"]
-        X_tr, X_te, y_tr, y_te = train_test_split(X.copy(), y.copy(), test_size=tsize, random_state=1)
-        data[name] = (X_tr, X_te, y_tr, y_te, cats)  # Spit out the values.
+    for name, func in prep.items():
+        if name == "cat_ordinal":
+            tr_out, cats = func(Xy_tr,
+                                new_cat_feats=all_new_cat_feats,
+                                new_maps=all_new_maps)
+            te_out, _ = func(Xy_te,
+                             new_cat_feats=all_new_cat_feats,
+                             new_maps=all_new_maps)
+        else:
+            tr_out, cats = func(Xy_tr, new_cat_feats=all_new_cat_feats)
+            te_out, _ = func(Xy_te, new_cat_feats=all_new_cat_feats)
 
-    return data
+        X_tr = tr_out.drop(columns=["total_stats", "name"])
+        y_tr = tr_out["total_stats"]
+        X_te = te_out.drop(columns=["total_stats", "name"])
+        y_te = te_out["total_stats"]
+
+        data[name] = (X_tr, X_te, y_tr, y_te, cats)
+
+    return data, fe_state
 
 
-def prepare_data_predict(predict_df):
+def prepare_data_predict(predict_df,
+                         fe_state=None,
+                         feat_eng_steps=None):
     """
     This function will do 4 main things:
+
 
         - 1) Encode and impute with :func:`cat_fill_split`
         - 2) Preprocess all your data in 3 different ways with :func:`prep_name_model_mode`
         - 3) Split the train and test values with :func:`train_test_split`
         - 4) Spit out all processed data as dict.
 
+
     Args:
         df (my_df): the pokedex to use
         tsize (float): In case you want another ratio for the training set.
+
 
     Returns:
         data (Dict): All data processed according to preprocessors.
     """
 
-    # 1: Drop BST values, encode and impute and split df for training
-
-    df_to_split = cat_fill(predict_df)
+    raw_df = load_data(predict_df)
     just_names = load_data(predict_df)
     poke_names = just_names['name']
 
-    # 3: Here the dictionariony with all preprocessors. In case you add one more, do not forget to add here.
+    feat_eng_steps = feat_eng_steps or []
+    fe_state = fe_state or {}
+
+    all_new_cat_feats = []
+    all_new_maps = {}
+
+    for step_name, _, apply_func in feat_eng_steps:
+        step_state = fe_state[step_name]
+        raw_df = apply_func(raw_df, step_state)
+
+        step_cat_feats = step_state.get("new_cat_feats", [])
+        if step_cat_feats:
+            all_new_cat_feats.extend(step_cat_feats)
+
+        step_maps = step_state.get("new_maps", {})
+        if step_maps:
+            all_new_maps.update(step_maps)
+
+    df_pred = cat_fill(raw_df)
+
     prep = {
         "cat_ordinal": prep_catboost_ordinal,
         "cat_native":  prep_catboost_native,
         "light_gbm": prep_lightgbm,
     }
 
-    # 4: Data will be output in a dic.
     data = {}
-    for name, func in prep.items():  # dict.items will open and unzip keys and values!
-        # func act as the value of the dict and map it.
-        prep_data = func(df_to_split)
-        cats = prep_data[-1]
-        X_pred = prep_data[0]
-        X_pred['name'] = poke_names
-        data[name] = (X_pred, cats)  # Spit out the values.
+    for name, func in prep.items():
+        if name == "cat_ordinal":
+            out, cats = func(df_pred,
+                             new_cat_feats=all_new_cat_feats,
+                             new_maps=all_new_maps)
+        else:
+            out, cats = func(df_pred, new_cat_feats=all_new_cat_feats)
+
+        out['name'] = poke_names.values
+        data[name] = (out, cats)
 
     return data

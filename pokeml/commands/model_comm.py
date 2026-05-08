@@ -1,15 +1,18 @@
+import joblib
 import typer
 import pandas as pd
 
 from pathlib import Path
 from rich.console import Console
-from pokeml.models.predict import predict_stats, predict_all_models
+from pokeml.models.predict import predict_all_models
 from pokeml.models.tuning import tuning
 from pokeml.models.train import train
 from pokeml.features.preprocess import prepare_data_train, prepare_data_predict
 from pokeml.utils.utils_eda import df_to_table
 from pokeml.utils.utils_train import load_json
 from pokeml.utils.utils_commands import CliUI
+from pokeml.utils.utils_feat_eng import resolve_feat_steps
+from pokeml.features.feature_registry import get_feature_steps
 
 app = typer.Typer()
 console = Console()
@@ -17,24 +20,34 @@ console = Console()
 ui = CliUI()
 
 
-@app.command('tune', help='Find the best suited set of parameters with RandomSearchCV. Extract best params. Defaults tell you location for each required file')
+@app.command('tune',
+             help='Find the best suited set of parameters with RandomSearchCV. Extract best params.')
 def tune_data(
-        input_path: str = 'datasets/pkdx_min.csv',
-        input_config: str = 'configs/tuning_easy.json',
-        iterations: int = 1,
-        output_name: str = 'artifacts/tuning/yyyy_mm_dd',  # Declare name of your json output (w/o extension)
+        input_path: str = typer.Option("datasets/pkdx_min.csv", help="Path to the input dataset."),
+        input_config: str = typer.Option('configs/tuning_easy.json',
+                                         help="The set of configuration to look into the GridSearch"),
+        iterations: int = typer.Option(1, help="Number of search iterations in Grid."),
+        # Declare name of your json output (w/o extension). System will add later.
+        output_name: str = typer.Option('artifacts/tuning/yyyy_mm_dd',
+                                        help="Path to output. Do not declare extension! System does automatically."),
+        feat_mode: str = typer.Option('none', help='Options ["none", "full", "custom"]'),
+        feat_steps: str = typer.Option('', help='If custom -> Options ["initial_tag"]')  # Add more info here.
 ):
     console.print('')
     ui.rule("PokéML Tuning")
     ui.info(f"Preparing initial data from [bold]{input_path}[/bold]")
-    to_tune = prepare_data_train(input_path)
+
+    #  Resolving feat steps
+    feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
+    to_tune, _ = prepare_data_train(input_path,
+                                    feat_eng_steps=feat_eng_steps)
     with console.status(
         f"[bold green]Tuning models[/bold green] ({iterations} iterations) ..."
     ):
-        result = tuning(to_tune,
-                        my_grid=input_config,
-                        search_iter=iterations,
-                        output_name=output_name)
+        tuning(to_tune,
+               my_grid=input_config,
+               search_iter=iterations,
+               output_name=output_name)
 
     ui.success("Tuning complete")
     ui.info(f"Relevant information for the best run:")
@@ -49,20 +62,49 @@ def tune_data(
     console.print('')
 
 
-@app.command('train', help='Based on parameters found with tune, train the model. Create training curves')
+@app.command(
+    "train",
+    help="Based on parameters found with tune, train the model. Create training curves."
+)
 def train_data(
-    input_json: str = 'artifacts/tuning/yyyy_mm_dd_something_bp.json',
-    input_path: str = 'datasets/pkdx_min.csv',
-    output_joblib: str = 'artifacts/models/yyyy_mm_dd_something.joblib',
-    stop_loss: bool = False,
-    early_stop: int = 40,
+    input_json: str = typer.Option(
+        "artifacts/tuning/yyyy_mm_dd_something_bp.json",
+        help="Path to the best-parameters JSON produced by tune."
+    ),
+    input_path: str = typer.Option(
+        "datasets/pkdx_min.csv",
+        help="Path to the training dataset CSV."
+    ),
+    output_joblib: str = typer.Option(
+        "artifacts/models/yyyy_mm_dd_something.joblib",
+        help="Output path for the trained model artifact. Do not add .joblib ext. That is automatic."
+    ),
+    stop_loss: bool = typer.Option(
+        True,
+        help="Enable early stopping during training."
+    ),
+    early_stop: int = typer.Option(
+        30,
+        help="Early stopping rounds used when stop_loss is enabled."
+    ),
+    feat_mode: str = typer.Option(
+        "none",
+        help='Feature engineering mode: "none", "full", or "custom".'
+    ),
+    feat_steps: str = typer.Option(
+        "",
+        help='Comma-separated custom feature steps, used when feat_mode="custom".'
+    ),
 ):
+
     console.print('')
     ui.rule('PokéML Training')
     ui.info(f"Preparing initial data from [bold]{input_path}[/bold]")
-
     ui.info(f"Tuning .json file: [bold]{input_json}[/bold]")
-    to_train = prepare_data_train(input_path)
+
+    feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
+    to_train, fe_state = prepare_data_train(input_path,
+                                            feat_eng_steps=feat_eng_steps)
     params = load_json(input_json)
 
     info_stop = []
@@ -78,7 +120,10 @@ def train_data(
         f"[bold green]Training models[/bold green] ..."
     ):
 
-        result = train(to_train, params=params, output_name=output_joblib)
+        train(to_train,
+              params=params,
+              output_name=output_joblib,
+              fe_state=fe_state)
 
     # Defining path for out
     p = Path(output_joblib)
@@ -100,13 +145,40 @@ def train_data(
     console.print('')
 
 
-@app.command('predict', help='Load a database of new pokémon without defined BST and predict their stats')
+@app.command(
+    "predict",
+    help="Load a database of new Pokémon without defined BST and predict their stats."
+)
 def predict_data(
-        input_run: str = 'artifcats/models/yyyy_mm_dd_info',  # Declare name of joblibs (no extension)
-        new_poke_data: str = 'datasets/new_pokes.csv',
-        output_preds: str = 'yyyy_mm_dd_name'):  # Declare name of csv (no ext)
+    input_run: str = typer.Option(
+        "artifcats/models/yyyy_mm_dd_info",
+        help="Base path to the trained run artifacts, without file extension."
+    ),
+    new_poke_data: str = typer.Option(
+        "datasets/new_pokes.csv",
+        help="Path to the CSV with new Pokémon to predict."
+    ),
+    output_preds: str = typer.Option(
+        "artifacts/predictions/yyyy_mm_dd_name",
+        help="Base output name for prediction files, without extension."
+    ),
+    feat_mode: str = typer.Option(
+        "none",
+        help='Feature engineering mode: "none", "full", or "custom".'
+    ),
+    feat_steps: str = typer.Option(
+        "",
+        help='Comma-separated custom feature steps, used when feat_mode="custom".'
+    ),
+):
 
-    to_predict = prepare_data_predict(new_poke_data)
+    feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
+    fe_state_path = Path(f"{input_run}_fe_state.joblib")
+    fe_state = joblib.load(fe_state_path)
+    to_predict = prepare_data_predict(new_poke_data,
+                                      fe_state=fe_state,
+                                      feat_eng_steps=feat_eng_steps)
+
     predict_all_models(run=input_run,
                        new_poke_data=to_predict,
                        output_preds=output_preds)

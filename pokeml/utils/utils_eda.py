@@ -220,3 +220,15 @@ def replace_between_markers(file_path: str, marker: str, new_text: str):
         raise ValueError(f"Could not find two '{marker}' markers in {file_path}")
 
     path.write_text(updated, encoding="utf-8")
+
+
+def validate_required_columns(df, required_cols, func_name="function"):
+    """
+    To validate columns appearing when checking dual type ordering deviations.
+    """
+    missing = set(required_cols) - set(df.columns)
+    if missing:
+        raise KeyError(
+            f"{func_name}: Missing required columns: {sorted(missing)}. "
+            f"Available columns: {list(df.columns)}"
+        )

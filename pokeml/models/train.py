@@ -1,7 +1,7 @@
-
 import json
 import joblib
 import matplotlib.pyplot as plt
+
 
 from pathlib import Path
 from pokeml.models.trainers import Cat_Trainer, LGBM_Trainer
@@ -10,11 +10,16 @@ from pokeml.visualisation.loss_plt import plot_loss
 
 def train(prep_data,
           params: dict,
-          output_name):
+          output_name,
+          fe_state=None):
     """
     Train models and save one combined figure with 3 loss-curve subplots
     (one subplot per model).
     """
+
+    if not hasattr(prep_data, "items"):
+        raise TypeError(
+            "prep_data must be a dict like {'cat_ordinal': (...), ...}. If you have (data, fe_state), pass only data.")
 
     trained_models = {}
     evals = []  # For plots
@@ -30,6 +35,10 @@ def train(prep_data,
 
     plot_dir = Path("plots/training")
     plot_dir.mkdir(parents=True, exist_ok=True)
+
+    if fe_state is not None:
+        fe_path = out_dir / f"{last}_fe_state.joblib"
+        joblib.dump(fe_state, fe_path, compress=3)
 
     for name, (X_tr_p, X_te_p, y_tr, y_te, cats) in prep_data.items():
         if name in ("cat_ordinal", "cat_native"):

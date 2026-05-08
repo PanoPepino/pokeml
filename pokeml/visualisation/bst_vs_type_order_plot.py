@@ -12,12 +12,14 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 
-def type_order_deviation_plot(stage_list,
-                              baseline,
-                              df,
-                              min_count,
-                              rarity_list=("regular",),
-                              plot_path: Path = 'plots/eda/'):
+def type_order_deviation_plot(
+    stage_list,
+    baseline,
+    df,
+    min_count,
+    rarity_list=("regular",),
+    plot_path: Path = Path("plots/eda/")
+):
     if isinstance(stage_list, str):
         stage_list = [stage_list]
     if isinstance(rarity_list, str):
@@ -65,7 +67,7 @@ def type_order_deviation_plot(stage_list,
                 baseline=legendary_baseline,
                 df=df,
                 rarity="legendary",
-                min_count=min_count
+                min_count=min_count,
             )
             title_stage = "All stages"
             current_baseline = float(legendary_baseline)
@@ -75,7 +77,7 @@ def type_order_deviation_plot(stage_list,
                 baseline=regular_baseline,
                 df=df,
                 rarity="regular",
-                min_count=min_count
+                min_count=min_count,
             )
             title_stage = stage_value
             current_baseline = float(regular_baseline.loc[stage_value])
@@ -85,58 +87,47 @@ def type_order_deviation_plot(stage_list,
             ax.axis("off")
             continue
 
-        note = stability_label(comparison)
+        comparison = comparison.dropna(subset=["dev_z_t1", "dev_z_t2"]).copy()
 
-        ax.text(
-            0.03, 0.97,
-            note,
-            transform=ax.transAxes,
-            fontsize=8,
-            verticalalignment='top',
-            horizontalalignment='left',
-            bbox=dict(boxstyle='round', facecolor='white', alpha=ALPHA, edgecolor=MAIN_COLOR)
-        )
+        if comparison.empty:
+            ax.set_title(f"{title_stage} | {rarity} (no usable z-scores)")
+            ax.axis("off")
+            continue
 
         for _, row_data in comparison.iterrows():
-            type_name = row_data['type_2']
-            x = row_data['dual_t1_dev']
-            y = row_data['dual_t2_dev']
-            size = min(row_data['n_t1'], row_data['n_t2']) * 160
+            type_name = row_data["type_2"]
+            x = row_data["dev_z_t1"]
+            y = row_data["dev_z_t2"]
+            size = max(20, min(row_data["n_t1"], row_data["n_t2"]) * 100)
 
             ax.scatter(
                 x, y,
                 s=size,
-                color=TYPE_COLORS.get(type_name, 'gray'),
-                edgecolor='black',
-                linewidth=1,
+                color=TYPE_COLORS.get(type_name, "gray"),
+                edgecolor="black",
+                linewidth=0.5,
                 alpha=0.7
             )
 
-            ax.text(
-                x, y, type_name[:3].upper(),
-                fontsize=7, ha='center', va='center', fontweight='bold'
-            )
-
         lims = [
-            min(comparison['dual_t1_dev'].min(), comparison['dual_t2_dev'].min()) - 30,
-            max(comparison['dual_t1_dev'].max(), comparison['dual_t2_dev'].max()) + 30
+            min(comparison["dev_z_t1"].min(), comparison["dev_z_t2"].min()) - 0.2,
+            max(comparison["dev_z_t1"].max(), comparison["dev_z_t2"].max()) + 0.2,
         ]
 
-        ax.plot(lims, lims, 'b--', linewidth=1, alpha=ALPHA, label='No ordering effect (y=x)')
-        ax.axhline(0, color=MAIN_COLOR, linestyle=':', linewidth=1)
-        ax.axvline(0, color=MAIN_COLOR, linestyle=':', linewidth=1)
+        ax.plot(lims, lims, "b--", linewidth=1, alpha=ALPHA, label="No ordering effect (y=x)")
+        ax.axhline(0, color=MAIN_COLOR, linestyle=":", linewidth=1)
+        ax.axvline(0, color=MAIN_COLOR, linestyle=":", linewidth=1)
         ax.set_xlim(lims)
         ax.set_ylim(lims)
         ax.grid(alpha=0.3)
 
-        ax.set_xlabel('Deviation PRIMARY type', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Deviation SECONDARY type', fontsize=12, fontweight='bold')
+        ax.set_xlabel("Deviation for type_1 (dev_z_t1)", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Deviation for type_2 (dev_z_t2)", fontsize=12, fontweight="bold")
         ax.set_title(
-            f'Type Ordering Effect on BST\n'
-            f'{title_stage} | {rarity} | baseline={current_baseline:.1f}\n'
-            f'(bubble size = min sample size)',
+            f"Type Ordering Effect on BST (Z-score)\n"
+            f"{title_stage} | {rarity} | baseline={current_baseline:.1f}\n",
             fontsize=13,
-            fontweight='bold'
+            fontweight="bold"
         )
         ax.legend(fontsize=10)
 
@@ -146,29 +137,5 @@ def type_order_deviation_plot(stage_list,
 
     Path(plot_path).mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
-    plt.savefig(Path(plot_path) / 'type_ordering.png', dpi=500, bbox_inches='tight')
+    plt.savefig(Path(plot_path) / "type_ordering.png", dpi=500, bbox_inches="tight")
     plt.show()
-
-
-def stability_label(comparison):
-    if comparison is None or comparison.empty:
-        return "Stability: no data"
-
-    paired_n = np.minimum(comparison["n_t1"], comparison["n_t2"])
-    min_support = int(paired_n.min())
-    median_support = int(np.median(paired_n))
-    n_points = len(comparison)
-
-    if min_support < 5:
-        level = "Low"
-    elif min_support < 10:
-        level = "Moderate"
-    else:
-        level = "Higher"
-
-    return (
-        f"Stability: {level}\n"
-        f"points = {n_points}\n"
-        f"min paired n = {min_support}\n"
-        f"median paired n = {median_support}"
-    )

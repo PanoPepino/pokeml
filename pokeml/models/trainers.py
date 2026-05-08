@@ -1,5 +1,6 @@
 import numpy as np
 
+
 from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -12,9 +13,11 @@ class Cat_Trainer(BaseEstimator, RegressorMixin):  # To inherit other inbuilt fu
     """
     This Class a general CatBoost Model trainer. It has several in-built function to easily fit and train your model.
 
+
     Args:
     - It can eat some **params, i.e. a dictionary of parameters to pass when training!
     Methods:
+
 
         - fit (x,y): The data for training.
         - predict_val (test_data): The data X_test as input to predict its y.
@@ -35,15 +38,14 @@ class Cat_Trainer(BaseEstimator, RegressorMixin):  # To inherit other inbuilt fu
         self.model = None
         # print(self.cat_features) To check if new cats have been added.
 
-    def fit(self, x, y, eval_set=None, cat_features=None, **kwargs):
-        all_features = [x.columns.get_loc(c) for c in self.cat_features]
+    def fit(self, x, y, eval_set=None, **kwargs):
+        all_features = [x.columns.get_loc(c) for c in self.cat_features if c in x.columns]
         # print(all_features) To check all cats have been converted
 
         self.model = CatBoostRegressor(cat_features=all_features, **self.params)
         self.model.fit(x.copy(), y,
                        eval_set=eval_set,
-                       cat_features=cat_features,
-                       ** kwargs)
+                       **kwargs)
         return self
 
     def get_evals(self):
@@ -100,9 +102,11 @@ class LGBM_Trainer(BaseEstimator, RegressorMixin):
     """
     This Class a general LGBM Model trainer. It has several in-built function to easily fit and train your model.
 
+
     Args:
     - It can eat some **params, i.e. a dictionary of parameters to pass when training!
     Methods:
+
 
         - fit (x,y): The data for training.
         - predict_val (test_data): The data X_test as input to predict its y.

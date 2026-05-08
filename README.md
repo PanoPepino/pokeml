@@ -24,11 +24,11 @@
 <p align="center">
 <!-- PREDICTIONS -->
 
-|  Unnamed: 0  |  Browt   |  Pombon  |  Gecqua  |
+|  Unnamed: 0  |  browt   |  pombon  |  gecqua  |
 |:------------:|:--------:|:--------:|:--------:|
-|  cat_native  | 293 ± 39 | 310 ± 6  | 304 ± 20 |
-| cat_ordinal  | 277 ± 33 | 299 ± 42 | 289 ± 47 |
-|  light_gbm   | 288 ± 62 | 316 ± 25 | 311 ± 41 |
+|  cat_native  | 304 ± 16 | 314 ± 5  | 308 ± 3  |
+| cat_ordinal  | 281 ± 23 | 293 ± 17 | 298 ± 18 |
+|  light_gbm   | 274 ± 39 | 304 ± 11 | 296 ± 17 |
 <!-- PREDICTIONS -->
 </p>
 
@@ -40,9 +40,9 @@
 
 |    model    |  tr_R2  |  tr_RMSE  |  tr_MAE  |  val_R2  |  val_RMSE  |  val_MAE  |  overfit_R2  |  overfit_RMSE  |  max_res  |
 |:-----------:|:-------:|:---------:|:--------:|:--------:|:----------:|:---------:|:------------:|:--------------:|:---------:|
-| cat_native  |  0.84   |   45.18   |  32.53   |   0.82   |   46.34    |   35.14   |     0.02     |     -1.16      |  181.16   |
-| cat_ordinal |  0.83   |   46.51   |  34.45   |   0.82   |   46.74    |   35.52   |     0.02     |     -0.22      |  194.43   |
-|  light_gbm  |  0.86   |   42.22   |  31.68   |   0.81   |   47.54    |   36.01   |     0.05     |     -5.32      |  183.33   |
+| cat_native  |  0.80   |   50.73   |  36.74   |   0.78   |   51.74    |   38.53   |     0.03     |     -1.01      |  210.52   |
+| cat_ordinal |  0.83   |   46.66   |  34.67   |   0.81   |   47.00    |   35.28   |     0.02     |     -0.34      |  212.36   |
+|  light_gbm  |  0.86   |   42.08   |  31.97   |   0.82   |   46.78    |   35.90   |     0.05     |     -4.70      |  190.58   |
 <!-- LEADERBOARD -->
 </p>
 
@@ -53,10 +53,10 @@
 <p align='center'>
 <table align="center">
   <tr>
-    <tr align="center"><img src= "plots/evaluation/2026_04_22_w_stop_cat_native_residual_plot.png"
+    <tr align="center"><img src= "plots/evaluation/2026_05_08_feat_cat_native_residual_plot.png"
     style="border: 3px solid #000000;  border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></tr>
-    <tr align="center"><img src="plots/evaluation/2026_04_22_w_stop_cat_ordinal_residual_plot.png" style="border: 3px solid #000000; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></tr>
-    <tr align="center"><img src="plots/evaluation/2026_04_22_w_stop_light_gbm_residual_plot.png" style="border: 3px solid #000000; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></tr>
+    <tr align="center"><img src="plots/evaluation/2026_05_08_feat_cat_ordinal_residual_plot.png" style="border: 3px solid #000000; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></tr>
+    <tr align="center"><img src="plots/evaluation/2026_05_08_feat_light_gbm_residual_plot.png" style="border: 3px solid #000000; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></tr>
   </tr>
 </table>
 </p>

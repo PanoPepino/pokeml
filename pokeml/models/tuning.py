@@ -75,6 +75,7 @@ def tuning(prep_data,
 
         results.append({
             'model': name,
+            'iterations': search_iter,
             'tuning_MAE': -search.best_score_,  # Positive MAE
             'test_R2': r2_preds,
             'test_RMSE': rmse_preds,
@@ -98,7 +99,7 @@ def tuning(prep_data,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cv_data = pd.DataFrame(results)
-    print(f"{parent}/{last}_cv.csv", type(f"{parent}/{last}_cv.csv"))
+    # print(f"{parent}/{last}_cv.csv", type(f"{parent}/{last}_cv.csv"))
     cv_data.to_csv(f"{parent}/{last}_cv.csv", index=False)
 
     best_params_path = Path(f"{output_name}_bp.json")  # bp = best_params

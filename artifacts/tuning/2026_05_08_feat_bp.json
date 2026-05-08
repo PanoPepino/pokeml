@@ -1,0 +1,27 @@
+{
+  "cat_ordinal": {
+    "random_strength": 26,
+    "n_estimators": 750,
+    "max_depth": 6,
+    "learning_rate": 0.07,
+    "l2_leaf_reg": 1.9000000000000001,
+    "bagging_temperature": 1.0
+  },
+  "cat_native": {
+    "random_strength": 26,
+    "n_estimators": 750,
+    "max_depth": 6,
+    "learning_rate": 0.07,
+    "l2_leaf_reg": 1.9000000000000001,
+    "bagging_temperature": 1.0
+  },
+  "light_gbm": {
+    "reg_lambda": 4,
+    "num_leaves": 18,
+    "n_estimators": 1390,
+    "min_child_samples": 34,
+    "max_depth": 9,
+    "learning_rate": 0.17,
+    "bagging_fraction": 0.15000000000000002
+  }
+}

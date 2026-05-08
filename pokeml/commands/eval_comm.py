@@ -7,6 +7,7 @@ from pokeml.utils.utils_commands import CliUI
 from pokeml.evaluation.eval import real_vs_predicted
 from pokeml.features.preprocess import prepare_data_train
 from pokeml.utils.utils_eda import df_to_table
+from pokeml.utils.utils_feat_eng import resolve_feat_steps
 
 app = typer.Typer()
 console = Console()
@@ -18,24 +19,31 @@ ui = CliUI()
 def plot_residual(
     input_path: str = 'datasets/pkdx_min.csv',
     model_iter: str = None,
+    feat_mode: str = 'none',
+    feat_steps: str = '',
 ):
     console.print('')
     ui.rule("PokéML Evaluation")
     ui.info(f"Predicted vs Actual values for run: [bold]{model_iter}_models.joblib[/bold]")
-    prepared_data = prepare_data_train(input_path)
 
-    [real_vs_predicted(f"{model_iter}_{model}", prepared_data)
-     for model in ["cat_native", "cat_ordinal", "light_gbm"]]
+    feat_eng_steps = resolve_feat_steps(feat_mode, feat_steps)
+    prepared_data, fe_state = prepare_data_train(
+        input_path,
+        feat_eng_steps=feat_eng_steps
+    )
 
-    # Defining path for out
+    for model in ["cat_native", "cat_ordinal", "light_gbm"]:
+        real_vs_predicted(f"{model_iter}_{model}", prepared_data)
+
     p = Path(model_iter)
     out_dir = p.parent
     last = p.name
-
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    dfs = [pd.read_csv(
-        f'artifacts/training/metrics_data_{last}_{model}.csv') for model in ["cat_native", "cat_ordinal", "light_gbm"]]
+    dfs = [
+        pd.read_csv(f'artifacts/training/metrics_data_{last}_{model}.csv')
+        for model in ["cat_native", "cat_ordinal", "light_gbm"]
+    ]
     metrics_df = pd.concat(dfs, ignore_index=True)
 
     console.print(df_to_table(metrics_df, show_index=False), justify='center')
