@@ -46,8 +46,10 @@ types/
 sprites/
 catboost_info/
 old/
-notebooks/
+notebooks/*.ipynb
 TO_DO.md
+prepare_readme.py
+artifacts/
 
 
 
