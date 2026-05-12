@@ -5,13 +5,13 @@ from rich.console import Console
 from pathlib import Path
 from pokeml.utils.utils_commands import CliUI
 from pokeml.evaluation.eval import real_vs_predicted
-from pokeml.features.preprocess import prepare_data_train
+from pokeml.pipeline.prepare import prepare_data_train
 from pokeml.utils.utils_eda import df_to_table
 from pokeml.utils.utils_feat_eng import resolve_feat_steps
 
+
 app = typer.Typer()
 console = Console()
-
 ui = CliUI()
 
 
@@ -27,24 +27,24 @@ def plot_residual(
     ui.info(f"Predicted vs Actual values for run: [bold]{model_iter}_models.joblib[/bold]")
 
     feat_eng_steps = resolve_feat_steps(feat_mode, feat_steps)
+
     prepared_data, fe_state = prepare_data_train(
         input_path,
         feat_eng_steps=feat_eng_steps
     )
 
+    metrics_rows = []
     for model in ["cat_native", "cat_ordinal", "light_gbm"]:
-        real_vs_predicted(f"{model_iter}_{model}", prepared_data)
+        row = real_vs_predicted(f"{model_iter}_{model}", prepared_data)
+        metrics_rows.append(row)
 
-    p = Path(model_iter)
-    out_dir = p.parent
-    last = p.name
+    metrics_df = pd.DataFrame(metrics_rows)
+
+    out_dir = Path("artifacts/evaluation")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    dfs = [
-        pd.read_csv(f'artifacts/training/metrics_data_{last}_{model}.csv')
-        for model in ["cat_native", "cat_ordinal", "light_gbm"]
-    ]
-    metrics_df = pd.concat(dfs, ignore_index=True)
+    last = Path(model_iter).name
+    metrics_df.to_csv(out_dir / f"metrics_data_{last}.csv", index=False)
 
     console.print(df_to_table(metrics_df, show_index=False), justify='center')
     ui.success("Plots complete")
@@ -52,5 +52,4 @@ def plot_residual(
         f"Residual plots: [bold]plots/evaluation/{last}_model_name.png[/bold]",
         title=f"[bold red] Residual information [/bold red]",
     )
-
     console.print('')

@@ -6,8 +6,8 @@ from rich.columns import Columns
 
 from pokeml.data.eda_general import bst_dist, compute_baseline, load_data, interval_bst, stats_by_stage
 from pokeml.utils.utils_eda import df_to_table, describe_data
-from pokeml.visualisation.bst_vs_stage_plot import get_bst_vs_stage_plot
-from pokeml.visualisation.gen_bst_plot import get_bst_plot, get_median_bst_plot
+from pokeml.visualisation.viz_eda.bst_vs_stage_plot import get_bst_vs_stage_plot
+from pokeml.visualisation.viz_eda.gen_bst_plot import get_bst_plot, get_median_bst_plot
 from pokeml.utils.utils_commands import CliUI
 
 app = typer.Typer()

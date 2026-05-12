@@ -1,16 +1,16 @@
 import json
 import joblib
-import matplotlib.pyplot as plt
 
 
 from pathlib import Path
 from pokeml.models.trainers import Cat_Trainer, LGBM_Trainer
-from pokeml.visualisation.loss_plt import plot_loss
+from pokeml.visualisation.viz_model.training_curves_plot import training_curves_plot
 
 
 def train(prep_data,
           params: dict,
           output_name,
+          classifier=None,  #  Added Edu's idea into the pipeline
           fe_state=None):
     """
     Train models and save one combined figure with 3 loss-curve subplots
@@ -33,14 +33,32 @@ def train(prep_data,
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    plot_dir = Path("plots/training")
-    plot_dir.mkdir(parents=True, exist_ok=True)
-
     if fe_state is not None:
         fe_path = out_dir / f"{last}_fe_state.joblib"
         joblib.dump(fe_state, fe_path, compress=3)
 
     for name, (X_tr_p, X_te_p, y_tr, y_te, cats) in prep_data.items():
+
+        # --------------------------------------------
+        # Adding Edu's classifier. Called step 1
+        #  Will add prebands and the probabilities of belonging to each band
+        # Careful! preband is a categorical feat.
+        # --------------------------------------------
+
+        if classifier is not None:
+            X_tr_p = classifier.enrich(X_tr_p)
+            X_te_p = classifier.enrich(X_te_p)
+
+            if "pred_band" not in cats:
+                cats = cats + ["pred_band"]
+
+        feature_names = list(X_tr_p.columns)
+        joblib.dump(feature_names, f"{output_name}_{name}_features.joblib")
+
+        # --------------------------------------------
+        # Here goes the previous logic. Called step 2
+        # --------------------------------------------
+
         if name in ("cat_ordinal", "cat_native"):
             trainer = Cat_Trainer(cat_features=cats, **params[name])
         else:
@@ -69,21 +87,8 @@ def train(prep_data,
         })
 
     # One single figure with 3 subplots, one for each model
-    n_models = len(evals)
-    fig, axs = plt.subplots(1, n_models, figsize=(7 * n_models, 6), squeeze=False)
-    axs = axs.ravel()
 
-    for ax, item in zip(axs, evals):
-        plot_loss(
-            name_model=item["model_name"],
-            evals=item["evals"],
-            ax=ax
-        )
-
-    fig.suptitle(f"Training / Validation for {last} Run", fontsize=16)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
-    fig.savefig(plot_dir / f"{last}_all_models_loss.png", dpi=500, bbox_inches="tight")
-    plt.close(fig)
+    training_curves_plot(last, evals)
 
     summary_path = out_dir / f"{last}_summary.json"
     with summary_path.open("w", encoding="utf-8") as f:

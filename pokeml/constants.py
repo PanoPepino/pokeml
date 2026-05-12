@@ -1,6 +1,7 @@
-
+import numpy as np
 
 # List of pokemon name exceptions to not die when parsing
+
 REGULAR_POKES = ['nidoran_f',
                  'nidoran_m',
                  'mr_mime',
@@ -46,7 +47,7 @@ REGULAR_POKES = ['nidoran_f',
                  '_paldea',
                  ]
 
-
+#  Pokes that are initial and will receive a tag in preprocessing
 INITIAL_POKES = [
     "bulbasaur", "ivysaur", "venusaur",
     "charmander", "charmeleon", "charizard",
@@ -75,11 +76,6 @@ INITIAL_POKES = [
     "sprigatito", "floragato", "meowscarada",
     "fuecoco", "crocalor", "skeledirge",
     "quaxly", "quaxwell", "quaquaval",
-]
-
-
-REGIONS = [
-    "alola", "galar", "hisui", "paldea"
 ]
 
 
@@ -120,6 +116,13 @@ BEAST_GEN_9 = ['wo_chien',
                'chi_yu']
 
 
+# Regions for regional variants
+REGIONS = [
+    "alola", "galar", "hisui", "paldea"
+]
+
+
+# Minimal features each pokedex must have
 MINIMAL_FEATURES = [
     'name',
     'type_1',
@@ -131,3 +134,11 @@ MINIMAL_FEATURES = [
     'total_stats',
     'height',
     'weight']
+
+
+# Configurations for the Classifier
+# FINAL_LABELS adds the semantic override for legendary-flagged Pokémon.
+
+BST_BINS = [-np.inf, 250, 329, 419, 509, 599, np.inf]
+BST_LABELS = ["very_low", "low", "mid", "high", "titan", "uber"]
+FINAL_LABELS = ["very_low", "low", "mid", "high", "titan", "uber", "legendary_like"]

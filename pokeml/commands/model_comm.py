@@ -4,15 +4,19 @@ import pandas as pd
 
 from pathlib import Path
 from rich.console import Console
+
 from pokeml.models.predict import predict_all_models
 from pokeml.models.tuning import tuning
 from pokeml.models.train import train
-from pokeml.features.preprocess import prepare_data_train, prepare_data_predict
+from pokeml.pipeline.prepare import prepare_data_train, prepare_data_predict
 from pokeml.utils.utils_eda import df_to_table
 from pokeml.utils.utils_train import load_json
 from pokeml.utils.utils_commands import CliUI
-from pokeml.utils.utils_feat_eng import resolve_feat_steps
 from pokeml.features.feature_registry import get_feature_steps
+from pokeml.classifier.trainer import BandClassifier
+from pokeml.classifier.evaluate import band_report
+from pokeml.classifier.bst_bands import make_bst_band
+from pokeml.visualisation.viz_model.confusion_plot import confusion_plot
 
 app = typer.Typer()
 console = Console()
@@ -107,6 +111,53 @@ def train_data(
                                             feat_eng_steps=feat_eng_steps)
     params = load_json(input_json)
 
+    # ----------------------------------------------------------------
+    # Here I will add Edu's classifier for easier training
+    # ----------------------------------------------------------------
+
+    X_tr_native, X_te_native, y_tr_native, y_te_native, cats_native = to_train['cat_native']
+
+    label_helper_df = X_tr_native.copy()
+    label_helper_df['total_stats'] = y_tr_native.values
+
+    classifier = BandClassifier()
+    classifier.fit(
+        X=X_tr_native,
+        y_num=y_tr_native,
+        cat_features=cats_native,
+        full_df_for_labels=label_helper_df
+    )
+
+    classifier.save(f"{output_joblib}_classifier.joblib")
+
+    # ------------------------------------------------------------
+    # Evaluate classifier on the native held-out split
+    # ------------------------------------------------------------
+
+    eval_helper_df = X_te_native.copy()
+    eval_helper_df["total_stats"] = y_te_native.values
+
+    y_true_band = make_bst_band(eval_helper_df)
+    y_pred_band = classifier.predict_band(X_te_native)
+
+    band_report(y_true_band, y_pred_band)
+
+    p = Path(output_joblib)
+    last = p.name
+
+    cls_plot_dir = Path("plots/classifier")
+    cls_plot_dir.mkdir(parents=True, exist_ok=True)
+
+    confusion_plot(
+        y_true=y_true_band,
+        y_pred=y_pred_band,
+        out_path=cls_plot_dir / f"{last}_classifier_confusion.png",
+    )
+
+    # ----------------------------------------------------------------
+    # And then previous logic
+    # ----------------------------------------------------------------
+
     info_stop = []
     if stop_loss:
         ui.info(f"Stop loss activated. Early stopping rounds at: {early_stop}")
@@ -123,7 +174,8 @@ def train_data(
         train(to_train,
               params=params,
               output_name=output_joblib,
-              fe_state=fe_state)
+              fe_state=fe_state,
+              classifier=classifier)
 
     # Defining path for out
     p = Path(output_joblib)
@@ -138,7 +190,9 @@ def train_data(
     ui.success("Training complete")
     ui.panel(
         f"Trained models: [bold]{output_joblib}.joblib[/bold]\n"
-        f"Training curves: [bold]plots/training/{last}_all_models_loss.png[/bold]",
+        f"Classifier artifact: [bold]{output_joblib}_classifier.joblib[/bold]\n"
+        f"Training curves: [bold]plots/training/{last}_all_models_loss.png[/bold]\n"
+        f"Classifier confusion: [bold]plots/classifier/{last}_classifier_confusion.png[/bold]",
         title=f"[bold red] Training information [/bold red]",
     )
 
@@ -175,10 +229,18 @@ def predict_data(
     feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
     fe_state_path = Path(f"{input_run}_fe_state.joblib")
     fe_state = joblib.load(fe_state_path)
+
+    # ----------------------------------------------------------------
+    # Here I will add Edu's classifier for easier training
+    # ----------------------------------------------------------------
+
+    classifier_path = Path(f"{input_run}_classifier.joblib")
+    classifier = joblib.load(classifier_path)
     to_predict = prepare_data_predict(new_poke_data,
                                       fe_state=fe_state,
                                       feat_eng_steps=feat_eng_steps)
 
     predict_all_models(run=input_run,
                        new_poke_data=to_predict,
-                       output_preds=output_preds)
+                       output_preds=output_preds,
+                       classifier=classifier)

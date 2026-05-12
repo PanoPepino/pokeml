@@ -38,27 +38,27 @@ dist/
 .idea/
 *.swp
 
-# Avoid some folders (but not the .pdf)
-documentation/*
-!documentation/*.pdf 
-types/
+# Avoid documentation folder but keep PDFs
+documentation/
+!documentation/*.pdf
 
+# Project-specific folders/files
+types/
 sprites/
 catboost_info/
 old/
-notebooks/*.ipynb
-TO_DO.md
-prepare_readme.py
+notebooks/
 artifacts/
 
+# Individual files
+TO_DO.md
+run_commands.sh
+prepare_readme.py
 
-
-# Docs / Reports (your .tex request)
+# Docs / Reports
 *.tex
 *.aux
-*.log  # LaTeX logs
 docs/_build/
 
 # Deployment (cloud-specific)
-.DS_Store
-.env    
+.env

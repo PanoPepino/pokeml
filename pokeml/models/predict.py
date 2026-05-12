@@ -9,6 +9,7 @@ def predict_stats(
         input_model: str,
         new_poke_data: dict,
         to_save: bool = True,
+        classifier=None,
         output_preds: str = None,
 ) -> pd.DataFrame:
     """
@@ -25,6 +26,17 @@ def predict_stats(
 
     poke_names = df_pred["name"]
     X_pred = df_pred.drop("name", axis=1)
+
+    if classifier is not None:
+        X_pred = classifier.enrich(X_pred)
+
+    expected_features = joblib.load(f"{input_model}_features.joblib")
+
+    missing = [col for col in expected_features if col not in X_pred.columns]
+    if missing:
+        raise ValueError(f"Missing regression features: {missing}")
+
+    X_pred = X_pred[expected_features]
 
     vals, uncs = model.predict_unc(X_pred)
 
@@ -49,15 +61,16 @@ def predict_stats(
 
 
 def predict_all_models(
-    run: str,
-    new_poke_data: dict,
-    output_preds: str,
-) -> pd.DataFrame:
+        run: str,
+        new_poke_data: dict,
+        output_preds: str,
+        classifier=None) -> pd.DataFrame:
     """
     Predict with all selected models and save one CSV where:
     - columns = pokemon names
     - rows = model predictions as 'value ± uncertainty'
     """
+
     model_suffixes = ["cat_native", "cat_ordinal", "light_gbm"]
     input_models = [f"{run}_{model}" for model in model_suffixes]
 
@@ -67,6 +80,7 @@ def predict_all_models(
         df_model = predict_stats(
             input_model=model_name,
             new_poke_data=new_poke_data,
+            classifier=classifier,
             to_save=False
         )
 
