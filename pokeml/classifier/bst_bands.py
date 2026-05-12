@@ -1,8 +1,9 @@
-# pokeml/bandclassifier/bst_bands.py
+# pokeml/classifier/bst_bands.py
 
 import numpy as np
 import pandas as pd
 
+from sklearn.metrics import accuracy_score, classification_report
 from pokeml.constants import BST_BINS, BST_LABELS, FINAL_LABELS
 
 
@@ -68,6 +69,13 @@ def band_prob_table(model, X: pd.DataFrame) -> pd.DataFrame:
     """
     Turn classifier probabilities into a labeled DataFrame.
     """
-
     proba = model.predict_proba(X)
     return pd.DataFrame(proba, columns=model.classes_, index=X.index)
+
+
+def band_report(y_true: pd.Series, y_pred: pd.Series) -> None:
+    """
+    Print simple classification metrics for the band classifier.
+    """
+    print("Band accuracy:", round(accuracy_score(y_true, y_pred), 4))
+    print(classification_report(y_true, y_pred, zero_division=0))

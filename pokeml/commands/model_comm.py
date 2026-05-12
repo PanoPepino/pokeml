@@ -14,8 +14,7 @@ from pokeml.utils.utils_train import load_json
 from pokeml.utils.utils_commands import CliUI
 from pokeml.features.feature_registry import get_feature_steps
 from pokeml.classifier.trainer import BandClassifier
-from pokeml.classifier.evaluate import band_report
-from pokeml.classifier.bst_bands import make_bst_band
+from pokeml.classifier.bst_bands import make_bst_band, band_report
 from pokeml.visualisation.viz_model.confusion_plot import confusion_plot
 
 app = typer.Typer()
@@ -41,7 +40,7 @@ def tune_data(
     ui.rule("PokéML Tuning")
     ui.info(f"Preparing initial data from [bold]{input_path}[/bold]")
 
-    #  Resolving feat steps
+    #  Resolving feat steps
     feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
     to_tune, _ = prepare_data_train(input_path,
                                     feat_eng_steps=feat_eng_steps)
@@ -112,7 +111,7 @@ def train_data(
     params = load_json(input_json)
 
     # ----------------------------------------------------------------
-    # Here I will add Edu's classifier for easier training
+    # Stage 1: Train BandClassifier on native split
     # ----------------------------------------------------------------
 
     X_tr_native, X_te_native, y_tr_native, y_te_native, cats_native = to_train['cat_native']
@@ -155,7 +154,7 @@ def train_data(
     )
 
     # ----------------------------------------------------------------
-    # And then previous logic
+    # Stage 2: Train regression models enriched with band predictions
     # ----------------------------------------------------------------
 
     info_stop = []
@@ -231,7 +230,7 @@ def predict_data(
     fe_state = joblib.load(fe_state_path)
 
     # ----------------------------------------------------------------
-    # Here I will add Edu's classifier for easier training
+    # Load classifier and enrich prediction data with band predictions
     # ----------------------------------------------------------------
 
     classifier_path = Path(f"{input_run}_classifier.joblib")

@@ -1,4 +1,4 @@
-# pokeml/bandclassifier/trainer.py
+# pokeml/classifier/trainer.py
 
 import joblib
 import pandas as pd
@@ -126,7 +126,6 @@ class BandClassifier:
         Save the full wrapper, not only the CatBoost model,
         so classes_ and params are preserved.
         """
-
         joblib.dump(self, Path(path), compress=3)
 
     @classmethod
@@ -134,7 +133,6 @@ class BandClassifier:
         """
         Load a previously saved BandClassifier wrapper.
         """
-
         return joblib.load(Path(path))
 
     def validate_features(self, X: pd.DataFrame) -> pd.DataFrame:
