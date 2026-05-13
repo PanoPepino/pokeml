@@ -20,29 +20,45 @@ ui = CliUI()
 def tuning(prep_data,
            my_grid,
            search_iter,
-           output_name):
+           output_name,
+           classifier=None):
     """
-    This function will search the best possible parameters to fit the model to get the best predictions.
+    Search the best possible parameters to fit the model for the best predictions.
 
     Args:
-        prep_data (DatFrame): The data already encoded, imputed and properly massaged.
-        some_params (Dict): The grid of parameters to search around
-        search_iter (integer): The amount of times the process repeats.
-        name_json (str): The name of the file.
-        name_csv (str): Same for the cv_results file.
+        prep_data (DataFrame): The data already encoded, imputed and properly massaged.
+        my_grid (str): Path to the JSON grid of parameters to search.
+        search_iter (int): The amount of times the process repeats.
+        output_name (str): The name of the output file (w/o extension).
+        classifier (BandClassifier, optional):
+            A fitted BandClassifier instance. When provided, each split is enriched
+            with `pred_band` + `proba_*` columns before tuning — mirroring the
+            behaviour of train() so that tuning and training share the same
+            feature space.
 
     Returns:
-        Dict: A dictionary containing the best possible parameter tunning for each model. A .json file containing the best! fitting and the .csv of the dict
+        Dict: Best parameters per model saved as .json; CV results saved as .csv.
     """
 
     # Load Grid of parameters
     some_params = load_tuning_grid(my_grid)
 
-    # Create empty rows to be append with info. Then throw basic decission tree.
+    # Create empty rows to be appended with info.
     results = []
     future_fit = {}
 
     for name, (X_tr_p, X_te_p, y_tr, y_te, cats) in prep_data.items():
+
+        # ----------------------------------------------------------------
+        # Stage 1 enrichment: apply BandClassifier if provided.
+        # This ensures tuning runs on the same enriched feature space
+        # that train() uses, so the found parameters are truly compatible.
+        # ----------------------------------------------------------------
+        if classifier is not None:
+            X_tr_p = classifier.enrich(X_tr_p)
+            X_te_p = classifier.enrich(X_te_p)
+            if "pred_band" not in cats:
+                cats = cats + ["pred_band"]
 
         if name in ("cat_ordinal", "cat_native"):
             trainer = Cat_Trainer(cat_features=cats)
@@ -90,7 +106,6 @@ def tuning(prep_data,
         })
 
     # Defining outputs
-
     p = Path(output_name)
     parent = str(p.parent)
     last = p.name
@@ -99,7 +114,6 @@ def tuning(prep_data,
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cv_data = pd.DataFrame(results)
-    # print(f"{parent}/{last}_cv.csv", type(f"{parent}/{last}_cv.csv"))
     cv_data.to_csv(f"{parent}/{last}_cv.csv", index=False)
 
     best_params_path = Path(f"{output_name}_bp.json")  # bp = best_params

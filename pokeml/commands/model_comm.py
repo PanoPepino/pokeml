@@ -34,7 +34,15 @@ def tune_data(
         output_name: str = typer.Option('artifacts/tuning/yyyy_mm_dd',
                                         help="Path to output. Do not declare extension! System does automatically."),
         feat_mode: str = typer.Option('none', help='Options ["none", "full", "custom"]'),
-        feat_steps: str = typer.Option('', help='If custom -> Options ["initial_tag"]')  # Add more info here.
+        feat_steps: str = typer.Option('', help='If custom -> Options ["initial_tag"]'),
+        use_classifier: bool = typer.Option(
+            True,
+            help=(
+                "Train a BandClassifier and enrich features before tuning. "
+                "Mirrors the train command so tuning and training share the same "
+                "feature space. Disable with --no-use-classifier for a raw-feature baseline."
+            )
+        ),
 ):
     console.print('')
     ui.rule("PokéML Tuning")
@@ -44,13 +52,37 @@ def tune_data(
     feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
     to_tune, _ = prepare_data_train(input_path,
                                     feat_eng_steps=feat_eng_steps)
+
+    # ----------------------------------------------------------------
+    # Stage 1 (optional): Train BandClassifier so tuning runs on the
+    # same enriched feature space that train() uses.
+    # ----------------------------------------------------------------
+    classifier = None
+    if use_classifier:
+        ui.info("Training [bold]BandClassifier[/bold] for feature enrichment during tuning...")
+
+        X_tr_native, X_te_native, y_tr_native, y_te_native, cats_native = to_tune['cat_native']
+
+        label_helper_df = X_tr_native.copy()
+        label_helper_df['total_stats'] = y_tr_native.values
+
+        classifier = BandClassifier()
+        classifier.fit(
+            X=X_tr_native,
+            y_num=y_tr_native,
+            cat_features=cats_native,
+            full_df_for_labels=label_helper_df
+        )
+        ui.success("BandClassifier ready. Features will be enriched with [bold]pred_band[/bold] + proba columns.")
+
     with console.status(
         f"[bold green]Tuning models[/bold green] ({iterations} iterations) ..."
     ):
         tuning(to_tune,
                my_grid=input_config,
                search_iter=iterations,
-               output_name=output_name)
+               output_name=output_name,
+               classifier=classifier)
 
     ui.success("Tuning complete")
     ui.info(f"Relevant information for the best run:")
