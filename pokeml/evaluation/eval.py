@@ -38,17 +38,38 @@ def _align_frame_to_model(X: pd.DataFrame, trained_wrapper) -> pd.DataFrame:
 
 def real_vs_predicted(
     input_model: str,
-    input_data: dict
+    input_data: dict,
+    classifier=None,
 ) -> dict:
     """
     Generate predictions, compute metrics, save residual plot and prediction dump,
     and return one metrics row for aggregation in the CLI.
+
+    Args:
+        input_model (str):
+            Base path to the saved model artifact (without .joblib extension).
+        input_data (dict):
+            Prepared data dict as returned by prepare_data_train().
+        classifier (BandClassifier, optional):
+            A fitted BandClassifier instance. When provided, both X_train and
+            X_val are enriched with pred_band + proba_* columns before the
+            feature-alignment step runs. Required whenever the regression model
+            was trained with classifier enrichment enabled.
     """
 
     the_model = joblib.load(Path(f"{input_model}.joblib"))
     model_name = get_model(input_model)
 
     X_train, X_val, y_train, y_val, _ = input_data[model_name]
+
+    # ----------------------------------------------------------------
+    # Stage 1: enrich with band classifier if the model was trained
+    # with one. Must happen before _align_frame_to_model so that the
+    # expected pred_band / proba_* columns are already present.
+    # ----------------------------------------------------------------
+    if classifier is not None:
+        X_train = classifier.enrich(X_train)
+        X_val = classifier.enrich(X_val)
 
     if isinstance(X_train, pd.DataFrame):
         X_train = _align_frame_to_model(X_train, the_model)

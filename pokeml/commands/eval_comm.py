@@ -8,7 +8,7 @@ from pokeml.utils.utils_commands import CliUI
 from pokeml.evaluation.eval import real_vs_predicted
 from pokeml.pipeline.prepare import prepare_data_train
 from pokeml.utils.utils_eda import df_to_table
-from pokeml.utils.utils_feat_eng import resolve_feat_steps
+from pokeml.features.feature_registry import get_feature_steps
 
 
 app = typer.Typer()
@@ -18,40 +18,44 @@ ui = CliUI()
 
 @app.command('residual', help='Plot the residuals for your trained models')
 def plot_residual(
-    input_path: str = 'datasets/pkdx_min.csv',
-    model_iter: str = None,
-    feat_mode: str = 'none',
-    feat_steps: str = '',
+    input_path: str = typer.Option(
+        "datasets/pkdx_min.csv",
+        help="Path to the input dataset CSV."
+    ),
+    model_iter: str = typer.Option(
+        "artifacts/models/yyyy_mm_dd_something",
+        help="Base path to the trained run artifacts, without file extension."
+    ),
+    feat_mode: str = typer.Option(
+        "none",
+        help='Feature engineering mode: "none", "full", or "custom".'
+    ),
+    feat_steps: str = typer.Option(
+        "",
+        help='Comma-separated custom feature steps, used when feat_mode="custom".'
+    ),
 ):
     console.print('')
     ui.rule("PokéML Evaluation")
-    ui.info(f"Predicted vs Actual values for run: [bold]{model_iter}_models.joblib[/bold]")
+    ui.info(f"Predicted vs Actual values for run: [bold]{model_iter}[/bold]")
 
-    feat_eng_steps = resolve_feat_steps(feat_mode, feat_steps)
+    feat_eng_steps = get_feature_steps(mode=feat_mode, active_steps=feat_steps.split(","))
 
-    prepared_data, fe_state = prepare_data_train(
+    prepared_data, _ = prepare_data_train(
         input_path,
         feat_eng_steps=feat_eng_steps
     )
 
     # ----------------------------------------------------------------
-    # Load the classifier artifact saved during training and enrich
-    # the prepared data so feature schemas match the trained models.
-    # Without this step, models trained with pred_band/proba_* columns
-    # will raise a missing-column error during evaluation.
+    # Load the classifier artifact saved during training (if present).
+    # Enrichment is now delegated to real_vs_predicted() so each model
+    # call receives a consistent, classifier-aware feature set.
     # ----------------------------------------------------------------
-
+    classifier = None
     classifier_path = Path(f"{model_iter}_classifier.joblib")
     if classifier_path.exists():
         classifier = joblib.load(classifier_path)
-        enriched_data = {}
-        for name, (X_tr, X_te, y_tr, y_te, cats) in prepared_data.items():
-            X_tr_enc = classifier.enrich(X_tr)
-            X_te_enc = classifier.enrich(X_te)
-            if "pred_band" not in cats:
-                cats = cats + ["pred_band"]
-            enriched_data[name] = (X_tr_enc, X_te_enc, y_tr, y_te, cats)
-        prepared_data = enriched_data
+        ui.info("BandClassifier loaded — features will be enriched before evaluation.")
     else:
         ui.info(
             f"[yellow]No classifier artifact found at {classifier_path}. "
@@ -60,7 +64,11 @@ def plot_residual(
 
     metrics_rows = []
     for model in ["cat_native", "cat_ordinal", "light_gbm"]:
-        row = real_vs_predicted(f"{model_iter}_{model}", prepared_data)
+        row = real_vs_predicted(
+            f"{model_iter}_{model}",
+            prepared_data,
+            classifier=classifier,   # enrich inside real_vs_predicted
+        )
         metrics_rows.append(row)
 
     metrics_df = pd.DataFrame(metrics_rows)
@@ -74,7 +82,8 @@ def plot_residual(
     console.print(df_to_table(metrics_df, show_index=False), justify='center')
     ui.success("Plots complete")
     ui.panel(
-        f"Residual plots: [bold]plots/evaluation/{last}_model_name.png[/bold]",
+        f"Residual plots: [bold]plots/evaluation/{last}_model_name.png[/bold]\n"
+        f"Metrics CSV: [bold]artifacts/evaluation/metrics_data_{last}.csv[/bold]",
         title=f"[bold red] Residual information [/bold red]",
     )
     console.print('')
