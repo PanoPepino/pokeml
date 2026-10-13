@@ -1,0 +1,2 @@
+# Complete local project environment; dependencies live in pyproject.toml.
+-e .[notebooks,dev]

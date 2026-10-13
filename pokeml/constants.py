@@ -135,10 +135,13 @@ MINIMAL_FEATURES = [
     'height',
     'weight']
 
+# Retained for analysis/splitting, explicitly excluded from model predictors.
+MINIMAL_METADATA = ['id', 'species_id', 'evolution_chain_id', 'generation']
+
 
 # Configurations for the Classifier
 # FINAL_LABELS adds the semantic override for legendary-flagged Pokémon.
 
-BST_BINS = [-np.inf, 250, 329, 419, 509, 599, np.inf]
-BST_LABELS = ["very_low", "low", "mid", "high", "titan", "uber"]
-FINAL_LABELS = ["very_low", "low", "mid", "high", "titan", "uber", "legendary_like"]
+BST_BINS = [-np.inf, 269, 399, 499, np.inf]
+BST_LABELS = ["low", "mid", "high", "elite"]
+FINAL_LABELS = ["low", "mid", "high", "elite", "legendary_like"]

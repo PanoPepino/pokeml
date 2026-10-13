@@ -24,8 +24,8 @@ def cat_fill(my_df) -> pd.DataFrame:
     else:
         new_df = load_data(my_df).copy()
 
-    new_df["type_2"] = new_df["type_2"].fillna("None")
-    new_df[new_df.select_dtypes("object").columns] = (
-        new_df.select_dtypes("object").astype("category")
+    new_df["type_2"] = new_df["type_2"].astype("string").fillna("None")
+    new_df[new_df.select_dtypes(include=["object", "string"]).columns] = (
+        new_df.select_dtypes(include=["object", "string"]).astype("category")
     )
     return new_df

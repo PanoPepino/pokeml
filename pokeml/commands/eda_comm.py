@@ -4,8 +4,9 @@ import typer
 from rich.console import Console
 from rich.columns import Columns
 
-from pokeml.data.eda_general import bst_dist, compute_baseline, load_data, interval_bst, stats_by_stage
-from pokeml.utils.utils_eda import df_to_table, describe_data
+from pokeml.eda.general import bst_dist, compute_baseline, load_data, interval_bst, stats_by_stage
+from pokeml.reporting.tables import df_to_table
+from pokeml.eda.general import describe_data
 from pokeml.visualisation.viz_eda.bst_vs_stage_plot import get_bst_vs_stage_plot
 from pokeml.visualisation.viz_eda.gen_bst_plot import get_bst_plot, get_median_bst_plot
 from pokeml.utils.utils_commands import CliUI
@@ -21,7 +22,7 @@ def general_bst(
     input_path: str = "datasets/pkdx_min.csv"
 ):
     """
-    Run the full acquire_full_pkdx pipeline and display summary EDA.
+    Read local data and display summary EDA without acquisition.
     """
 
     console.print('')
@@ -31,7 +32,7 @@ def general_bst(
 
     # BASIC PKDX table
     console.print()
-    ui.info(f"[bold white]Pokédex Description[/bold white]")
+    ui.info("[bold white]Pokédex Description[/bold white]")
     table_describe = df_to_table(data_description, show_index=True)
     console.print(table_describe, justify='center')
     console.print()
@@ -43,13 +44,14 @@ def general_bst(
     table_legs = df_to_table(max_min_legs, hide_columns=['extreme', 'generation'])
 
     # DISPLAY
-    ui.info(f"[bold white]Max/Min BST for Regular/Legendary in each generation[/bold white]")
+    ui.info("[bold white]Max/Min BST for Regular/Legendary in each generation[/bold white]")
     console.print(Columns([table_regs, table_legs]), justify='center')
     console.print()
 
     # BST_DIST plot
-    over_dist = {interval_bst(load_data(input_path), 170 + i, 20)
-                 [0]: interval_bst(load_data(input_path), 170 + i, 20)[1] for i in range(0, 560, 20)}
+    frame = load_data(input_path)
+    over_dist = {interval_bst(frame, 170 + i, 20)
+                 [0]: interval_bst(frame, 170 + i, 20)[1] for i in range(0, 560, 20)}
     get_bst_plot(over_dist)
 
     # MEDIAN BY GEN plot
@@ -82,7 +84,7 @@ def bst_dist_stage(
 
     console.print()
     ui.rule("PokéML BST vs stage")
-    ui.info(f"[bold white]Splitting Pkdx by stage and rarity[/bold white]")
+    ui.info("[bold white]Splitting Pkdx by stage and rarity[/bold white]")
 
     mean_stage_cat = stats_by_stage(df, conf_stage_cat)
     baseline = compute_baseline(df)

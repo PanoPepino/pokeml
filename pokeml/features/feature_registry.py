@@ -13,8 +13,11 @@ def get_feature_steps(mode="full", active_steps=None):
     if mode == "none":
         return []
     if mode == "full":
-        return FEATURE_STEPS
+        return list(FEATURE_STEPS)
     if mode == "custom":
-        wanted = set(active_steps or [])
+        wanted = {name.strip() for name in (active_steps or []) if name.strip()}
+        unknown = wanted - {step[0] for step in FEATURE_STEPS}
+        if unknown:
+            raise ValueError(f"Unknown feature steps: {sorted(unknown)}")
         return [step for step in FEATURE_STEPS if step[0] in wanted]
     raise ValueError(f"Unknown mode: {mode}")

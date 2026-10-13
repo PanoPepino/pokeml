@@ -1,0 +1,63 @@
+{
+  "built_at": "2026-10-11T11:10:23.184179+00:00",
+  "scope": "Existing raw snapshot; selected regional/origin forms, not every alternate form",
+  "evolution_metadata": "Current known branches; includes later-generation evolutions",
+  "stage_policy": "Branch-specific length; ambiguous ancestors retain longest eligible route",
+  "rarity_policy": "Mythical merged into legendary; babies into regular; existing Paradox overrides retained",
+  "units": {
+    "height": "metres",
+    "weight": "kilograms",
+    "total_stats": "sum of six base stats"
+  },
+  "reference": {
+    "retrieved_at": "2026-10-11T11:03:48.735830+00:00",
+    "repository": "https://github.com/PokeAPI/pokeapi",
+    "commit": "c80757193bd0889054e36f4209762360bdaa4b95",
+    "files": {
+      "pokemon_species.csv": {
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/c80757193bd0889054e36f4209762360bdaa4b95/data/v2/csv/pokemon_species.csv",
+        "sha256": "e66e2eeb25fd3836b0ebab6bf87bbf01960aa3c0555e2bac495fa8393c5e0c45",
+        "bytes": 56884
+      },
+      "pokemon.csv": {
+        "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/c80757193bd0889054e36f4209762360bdaa4b95/data/v2/csv/pokemon.csv",
+        "sha256": "16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f8ce6b",
+        "bytes": 47082
+      }
+    }
+  },
+  "validation": {
+    "rows": 1082,
+    "species": 1025,
+    "families": 540,
+    "valid": true
+  },
+  "stage_corrections_vs_raw": 23,
+  "files": {
+    "datasets/pkdx_raw.csv": "77dff53fa00b7ee51d20c26966dd8b594ca85af760df3d10bfbb060755095bc3",
+    "datasets/pkdx_clean.csv": "564dd5a6a059897d0aa0392b4d10cecb4717ca560c747b0e238f1bd3029a13c4",
+    "datasets/pkdx_min.csv": "2c6785a018140d20ce85b349fa1c244bdadf4c03eccb540e061d09af0f25ebd6"
+  },
+  "minimal_columns": [
+    "name",
+    "type_1",
+    "type_2",
+    "rarity",
+    "stage",
+    "shape",
+    "color",
+    "total_stats",
+    "height",
+    "weight",
+    "id",
+    "species_id",
+    "evolution_chain_id",
+    "generation"
+  ],
+  "excluded_from_predictors": [
+    "id",
+    "species_id",
+    "evolution_chain_id",
+    "generation"
+  ]
+}

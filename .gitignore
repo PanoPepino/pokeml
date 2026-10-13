@@ -38,22 +38,11 @@ dist/
 .idea/
 *.swp
 
-# Avoid documentation folder but keep PDFs
-documentation/
-!documentation/*.pdf
 
 # Project-specific folders/files
-types/
-sprites/
 catboost_info/
-old/
-notebooks/
 artifacts/
 
-# Individual files
-TO_DO.md
-run_commands.sh
-prepare_readme.py
 
 # Docs / Reports
 *.tex

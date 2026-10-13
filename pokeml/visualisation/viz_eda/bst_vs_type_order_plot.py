@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from pathlib import Path
+from matplotlib.lines import Line2D
 
 
 from pokeml.visualisation.constants_plot import ALPHA, MAIN_COLOR
 from pokeml.visualisation.coloring import TYPE_COLORS
-from pokeml.data.eda_types import compare_type_ordering
+from pokeml.eda.types import compare_type_ordering
 
 
 def type_order_deviation_plot(
@@ -32,7 +33,10 @@ def type_order_deviation_plot(
         for rarity in rarity_list:
             if rarity == "regular":
                 plot_specs.append((stage, rarity))
-    plot_specs.append((None, "legendary"))
+    if 'legendary' in rarity_list:
+        plot_specs.append((None, "legendary"))
+    if not plot_specs:
+        raise ValueError('Request at least one regular stage or legendary comparison')
 
     n_plots = len(plot_specs)
     ncols = 3
@@ -43,6 +47,7 @@ def type_order_deviation_plot(
 
     for ax in axes.flat:
         ax.set_visible(False)
+    legend_types = set()
 
     if n_plots == 7 and nrows == 3 and ncols == 3:
         positions = [
@@ -80,7 +85,8 @@ def type_order_deviation_plot(
             current_baseline = float(regular_baseline.loc[stage_value])
 
         if comparison is None or comparison.empty:
-            ax.set_title(f"{title_stage} | {rarity} (no data)")
+            ax.set_title(f"{title_stage} | {rarity}")
+            ax.text(.5, .5, f'No types meet n≥{min_count}\nin both slots', transform=ax.transAxes, ha='center', color='grey')
             ax.axis("off")
             continue
 
@@ -93,9 +99,10 @@ def type_order_deviation_plot(
 
         for _, row_data in comparison.iterrows():
             type_name = row_data["type_2"]
+            legend_types.add(type_name)
             x = row_data["dev_z_t1"]
             y = row_data["dev_z_t2"]
-            size = max(20, min(row_data["n_t1"], row_data["n_t2"]) * 100)
+            size = max(35, min(220, min(row_data["n_t1"], row_data["n_t2"]) * 12))
 
             ax.scatter(
                 x, y,
@@ -111,7 +118,7 @@ def type_order_deviation_plot(
             max(comparison["dev_z_t1"].max(), comparison["dev_z_t2"].max()) + 0.2,
         ]
 
-        ax.plot(lims, lims, "b--", linewidth=1, alpha=ALPHA, label="No ordering effect (y=x)")
+        ax.plot(lims, lims, "b--", linewidth=1, alpha=ALPHA, label="Equal pooled slot deviation (y=x)")
         ax.axhline(0, color=MAIN_COLOR, linestyle=":", linewidth=1)
         ax.axvline(0, color=MAIN_COLOR, linestyle=":", linewidth=1)
         ax.set_xlim(lims)
@@ -121,18 +128,24 @@ def type_order_deviation_plot(
         ax.set_xlabel("Deviation for type_1 (dev_z_t1)", fontsize=12, fontweight="bold")
         ax.set_ylabel("Deviation for type_2 (dev_z_t2)", fontsize=12, fontweight="bold")
         ax.set_title(
-            f"Type Ordering Effect on BST (Z-score)\n"
+            f"Pooled type-slot association (Z-score)\n"
             f"{title_stage} | {rarity} | baseline={current_baseline:.1f}\n",
             fontsize=13,
             fontweight="bold"
         )
         ax.legend(fontsize=10)
 
-    for ax in axes.flat:
-        if not ax.has_data():
-            ax.set_visible(False)
+    handles = [Line2D([], [], linestyle='', marker='o', color=TYPE_COLORS.get(name, 'grey'),
+                      label=name.capitalize()) for name in sorted(legend_types)]
+    if n_plots == 7:
+        fig.legend(handles=handles, loc='lower left', bbox_to_anchor=(.05, .06), ncol=2,
+                   fontsize=8, title='Types; bubble size = smaller slot count')
+    else:
+        fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(.5, -.01), ncol=6,
+                   fontsize=8, title='Types; bubble size = smaller slot count')
 
     Path(plot_path).mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
-    plt.savefig(Path(plot_path) / "type_ordering.png", dpi=500, bbox_inches="tight")
+    plt.savefig(Path(plot_path) / "type_ordering.png", dpi=180, bbox_inches="tight")
     plt.show()
+    return fig, axes

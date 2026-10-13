@@ -3,8 +3,7 @@ import typer
 from rich.console import Console
 from pathlib import Path
 
-from pokeml.data.clean import clean_pkdx_raw, get_pkdx_minimal
-from pokeml.constants import MINIMAL_FEATURES
+from pokeml.data.build import build_pkdx
 from pokeml.data.acquire import acquire_full_pkdx
 from pokeml.utils.utils_commands import CliUI
 
@@ -36,20 +35,19 @@ def clean(
     output_path_minimal: str = "datasets/pkdx_min.csv",
 ):
     """
-    Run the full acquire_full_pkdx pipeline and save it in output_path.
+    Clean existing raw CSV offline, validate records and produce minimal CSV.
     """
 
     console.print('')
     ui.rule('PokéML Cleaning')
     ui.info(f'Modifying wrong entries, cleaning and simplifying raw Pokédex at [bold]{input_path}[/bold]')
 
-    clean_pkdx_raw(input_path, output_path_clean)
-    get_pkdx_minimal(output_path_clean, output_path_minimal, MINIMAL_FEATURES)
+    build_pkdx(input_path, output_path_clean, output_path_minimal)
     ui.success("Cleaning complete")
     ui.panel(
         f"Clean Pkdx: [bold]{output_path_clean}[/bold]\n"
         f"Minimal Pkdx: [bold]{output_path_minimal}[/bold]",
-        title=f"[bold red] New Generated Pkdx [/bold red]",
+        title="[bold red] New Generated Pkdx [/bold red]",
     )
 
     console.print('')

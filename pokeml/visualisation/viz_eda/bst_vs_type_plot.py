@@ -16,6 +16,7 @@ def type_deviations_single_plot(
     baseline=None,
     df=None,
     ax=None,
+    min_count=10,
 ):
     """
     Plot type total_stats deviations by construction for a given stage and rarity.
@@ -110,6 +111,9 @@ def type_deviations_single_plot(
             edgecolor="indigo",
             linewidth=0.8
         )
+        for bar, count in zip(bars, counts[constr]):
+            if count < min_count:
+                bar.set_alpha(.3)
 
         # Add count labels
         for j, (bar, type_name) in enumerate(zip(bars, pivot.index)):
@@ -144,7 +148,7 @@ def type_deviations_single_plot(
         rotation=45,
         ha="right"
     )
-    ax.legend(title="Construction", loc="lower right", fontsize=9)
+    ax.legend(title=f"Construction; faded bars n<{min_count}", loc="lower right", fontsize=9)
     ax.grid(axis="y", alpha=ALPHA, linestyle="--")
 
     return fig, ax
@@ -186,5 +190,6 @@ def type_deviations_plot(
 
     plot_path = Path(plot_path)
     plot_path.mkdir(parents=True, exist_ok=True)
-    fig.savefig(plot_path / f"type_deviations_{rarity}.png", dpi=500, bbox_inches="tight")
+    fig.savefig(plot_path / f"type_deviations_{rarity}.png", dpi=180, bbox_inches="tight")
     plt.show()
+    return fig, axes

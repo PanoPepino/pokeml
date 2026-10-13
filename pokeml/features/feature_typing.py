@@ -1,5 +1,5 @@
-from pokeml.utils.utils_eda import validate_required_columns
-from pokeml.data.eda_types import extract_type_deviations, fit_dual_type_dev_map, fit_mono_type_dev_map
+from pokeml.data.validation import validate_required_columns
+from pokeml.eda.types import extract_type_deviations, fit_dual_type_dev_map, fit_mono_type_dev_map
 
 import numpy as np
 
@@ -25,17 +25,19 @@ def add_dual_type_dev_features(df, dual_map):
         ["rarity", "stage", "type_2", "dev_z_t2", "dev_z_t2_isna"]
     ].drop_duplicates(["rarity", "stage", "type_2"])
 
-    tmp = df.loc[df["type_2"].notna(), ["rarity", "stage", "type_1", "type_2"]].copy()
+    positions = np.flatnonzero(df["type_2"].notna().to_numpy())
+    tmp = df.iloc[positions][["rarity", "stage", "type_1", "type_2"]].copy()
+    tmp["_row_position"] = positions
     if tmp.empty:
         return df
 
-    tmp = tmp.merge(left, on=["rarity", "stage", "type_1"], how="left")
-    tmp = tmp.merge(right, on=["rarity", "stage", "type_2"], how="left")
+    tmp = tmp.merge(left, on=["rarity", "stage", "type_1"], how="left", validate="many_to_one", sort=False)
+    tmp = tmp.merge(right, on=["rarity", "stage", "type_2"], how="left", validate="many_to_one", sort=False)
 
-    df.loc[tmp.index, "dev_z_t1"] = tmp["dev_z_t1"].values
-    df.loc[tmp.index, "dev_z_t2"] = tmp["dev_z_t2"].values
-    df.loc[tmp.index, "dev_z_t1_isna"] = tmp["dev_z_t1_isna"].fillna(1).astype("int8").values
-    df.loc[tmp.index, "dev_z_t2_isna"] = tmp["dev_z_t2_isna"].fillna(1).astype("int8").values
+    df.iloc[tmp["_row_position"].to_numpy(), df.columns.get_loc("dev_z_t1")] = tmp["dev_z_t1"].values
+    df.iloc[tmp["_row_position"].to_numpy(), df.columns.get_loc("dev_z_t2")] = tmp["dev_z_t2"].values
+    df.iloc[tmp["_row_position"].to_numpy(), df.columns.get_loc("dev_z_t1_isna")] = tmp["dev_z_t1_isna"].fillna(1).astype("int8").values
+    df.iloc[tmp["_row_position"].to_numpy(), df.columns.get_loc("dev_z_t2_isna")] = tmp["dev_z_t2_isna"].fillna(1).astype("int8").values
 
     return df
 
@@ -52,7 +54,9 @@ def add_mono_type_dev_features(df, mono_map):
         return df
 
     mono = mono_map[["rarity", "stage", "type_1", "mono_dev_z", "mono_dev_z_isna"]].copy()
-    df = df.merge(mono, on=["rarity", "stage", "type_1"], how="left")
+    original_index = df.index.copy()
+    df = df.merge(mono, on=["rarity", "stage", "type_1"], how="left", validate="many_to_one", sort=False)
+    df.index = original_index
 
     df.loc[df["type_2"].notna(), "mono_dev_z"] = np.nan
     df.loc[df["type_2"].notna(), "mono_dev_z_isna"] = 1
@@ -61,16 +65,6 @@ def add_mono_type_dev_features(df, mono_map):
     return df
 
 
-def build_type_deviation_features(df, min_count=3, use_zscore=True):
-    type_devs, regular_baseline, legendary_baseline = extract_type_deviations(df)
-
-    dual_map = fit_dual_type_dev_map(type_devs, min_count=min_count, use_zscore=use_zscore)
-    mono_map, _, _ = fit_mono_type_dev_map(df, min_count=min_count, use_zscore=use_zscore)
-
-    out = add_dual_type_dev_features(df, dual_map)
-    out = add_mono_type_dev_features(out, mono_map)
-
-    return out, dual_map, mono_map, regular_baseline, legendary_baseline
 
 
 def get_type_deviation_state(df, min_count=3, use_zscore=True):

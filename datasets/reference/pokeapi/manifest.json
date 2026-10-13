@@ -1,0 +1,17 @@
+{
+  "retrieved_at": "2026-10-11T11:03:48.735830+00:00",
+  "repository": "https://github.com/PokeAPI/pokeapi",
+  "commit": "c80757193bd0889054e36f4209762360bdaa4b95",
+  "files": {
+    "pokemon_species.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/c80757193bd0889054e36f4209762360bdaa4b95/data/v2/csv/pokemon_species.csv",
+      "sha256": "e66e2eeb25fd3836b0ebab6bf87bbf01960aa3c0555e2bac495fa8393c5e0c45",
+      "bytes": 56884
+    },
+    "pokemon.csv": {
+      "url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/c80757193bd0889054e36f4209762360bdaa4b95/data/v2/csv/pokemon.csv",
+      "sha256": "16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f8ce6b",
+      "bytes": 47082
+    }
+  }
+}

@@ -4,15 +4,15 @@ from typing import Dict
 
 import matplotlib.pyplot as plt
 
-from pokeml.data.eda_general import median_gen, split_bst_dist
-from pokeml.visualisation.constants_plot import *
+from pokeml.eda.general import median_gen, split_bst_dist
+from pokeml.visualisation.constants_plot import ALPHA, MAIN_COLOR, SECOND_COLOR, THIRD_COLOR, FOURTH_COLOR, LINE_COLOR
 
 
 def get_bst_plot(stats_dic: Dict,
                  plot_path: Path = 'plots/eda/'):
 
     plt.figure(figsize=(10, 8))
-    Path('plots/eda').mkdir(parents=True, exist_ok=True)
+    Path(plot_path).mkdir(parents=True, exist_ok=True)
 
     # Prepare data for total_stats_interval
     bins = list(stats_dic.keys())
@@ -28,7 +28,7 @@ def get_bst_plot(stats_dic: Dict,
     plt.xticks(rotation=45, ha='right')  # ✅ Fixed rotation
     plt.grid(True, alpha=ALPHA, axis='y')
     plt.tight_layout()
-    plt.savefig(plot_path + 'total_stats_interval.png', dpi=500, bbox_inches='tight')
+    plt.savefig(str(Path(plot_path) / 'total_stats_interval.png'), dpi=500, bbox_inches='tight')
 
 
 def get_median_bst_plot(df,
@@ -37,12 +37,12 @@ def get_median_bst_plot(df,
     # Get values
     min_gen, max_gen, max_legs = split_bst_dist(df)
     median_dic, median_overall = median_gen(df)
-    Path('plots/eda').mkdir(parents=True, exist_ok=True)
+    Path(plot_path).mkdir(parents=True, exist_ok=True)
 
     # Then, plot it
 
     plt.figure(figsize=(8, 8))
-    bins = list(range(1, 10, 1))
+    bins = list(median_dic)
     counts = list(median_dic.values())
 
     plt.bar(bins, counts, width=0.7, alpha=ALPHA, color=MAIN_COLOR, edgecolor=SECOND_COLOR)
@@ -58,5 +58,6 @@ def get_median_bst_plot(df,
     plt.grid(True, alpha=ALPHA, axis='y')
     plt.legend(bbox_to_anchor=(1, 1))
 
-    plt.ylim(min(min_gen)-10, 810)
-    plt.savefig(plot_path + 'median_bst_interval_per_gen.png', dpi=500, bbox_inches='tight')
+    plt.ylim(0, max([v for v in max_legs + max_gen if v == v], default=max(counts)) * 1.12)
+    plt.savefig(str(Path(plot_path) / 'median_bst_interval_per_gen.png'), dpi=500, bbox_inches='tight')
+    return plt.gcf(), plt.gca()
