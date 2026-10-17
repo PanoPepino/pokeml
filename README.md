@@ -1,6 +1,6 @@
 # Pokémon BST prediction
 
-Can announcement attributes help predict a new Pokémon’s **BST**—the sum of its six base stats?
+Can new Pokémon’s **BST**, i.e. the sum of its six base stats, be predicted using current Pokédex data?
 
 Inputs: types, evolution stage, rarity, shape, colour, height, weight and starter status.
 Stage and rarity are supplied assumptions. Actual BST and component stats never enter model inputs.
@@ -121,30 +121,3 @@ New Pokémon attributes -----+
 
 Feature rules and baseline learn from training rows only. All four check generations
 help choose settings/model; none is an untouched final test.
-
-## Run locally
-
-Python **3.14.8**. Install into your virtual environment:
-
-```bash
-python -m pip install -r requirements.txt
-python -m ipykernel install --sys-prefix --name pokemon --display-name "Pokemon (Python 3.14.8)"
-python -m jupyterlab
-```
-
-Open [04_workflow.ipynb](notebooks/04_workflow.ipynb). Default displays saved results.
-Set `REUSE_RUN=None` to train; set `TUNE_ITERATIONS` to enable tuning. Same workflow runs through CLI:
-
-```bash
-python -m pokeml.cli model workflow --run-name my_unique_run --tune-iterations 60
-```
-
-macOS LightGBM needs OpenMP (`brew install libomp`). Dependencies live in `pyproject.toml`;
-exact previous environment snapshot lives in `requirements/lock-py314-macos.txt`.
-
-## Explore methodology
-
-- EDA: [preparation](notebooks/00_data_preparation.ipynb), [stage](notebooks/01_stage_analysis.ipynb), [power creep](notebooks/02_power_creep.ipynb), [typing](notebooks/03_typing_analysis.ipynb).
-- Model checks: [training curves](notebooks/05_training_diagnostics.ipynb).
-- Further research: [shape](notebooks/06_shape_analysis.ipynb), [capture rate](notebooks/07_capture_rate_analysis.ipynb).
-- Guides: [validation](docs/VALIDATION.md), [methods and prediction](docs/BASELINE_CORRECTION.md), [data](docs/DATA_PREPARATION.md), [package structure](docs/ARCHITECTURE.md).
